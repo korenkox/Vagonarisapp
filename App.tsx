@@ -115,7 +115,7 @@ const App: React.FC = () => {
     // State update is handled by onAuthStateChange listener
   };
 
-  // --- 3. DATA SAVING (Supabase) ---
+  // --- 3. DATA SAVING & DELETING (Supabase) ---
   const addRecord = async (record: AttendanceRecord) => {
       // Optimistic update (show immediately)
       setRecords(prev => [record, ...prev]);
@@ -141,13 +141,34 @@ const App: React.FC = () => {
 
           if (error) {
               console.error('Error saving record:', error);
-              // Show specific error from DB to help with debugging (e.g. RLS policy violation)
               alert(`Chyba pri ukladaní: ${error.message}`);
           }
       } catch (err: any) {
           console.error('Async error:', err);
           alert(`Neočakávaná chyba: ${err.message}`);
       }
+  };
+
+  const deleteRecord = async (recordId: string) => {
+    // 1. Optimistic update (remove immediately from UI)
+    const previousRecords = [...records];
+    setRecords(prev => prev.filter(r => r.id !== recordId));
+
+    try {
+        // 2. Delete from DB
+        const { error } = await supabase
+            .from('attendance_records')
+            .delete()
+            .eq('id', recordId);
+
+        if (error) throw error;
+        
+    } catch (err: any) {
+        console.error('Error deleting record:', err);
+        alert('Nepodarilo sa vymazať záznam.');
+        // Revert on error
+        setRecords(previousRecords);
+    }
   };
 
   // Shift config is still local for now, can be moved to DB later
@@ -175,6 +196,7 @@ const App: React.FC = () => {
           onLogout={handleLogout}
           records={records}
           onAddRecord={addRecord}
+          onDeleteRecord={deleteRecord}
           shiftConfig={shiftConfig}
           onUpdateShiftConfig={setShiftConfig}
         />
