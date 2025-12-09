@@ -172,9 +172,6 @@ const TeamView: React.FC<TeamViewProps> = ({ user, records, shiftConfig }) => {
   // --- 3. Sync My Stats to Cloud ---
   useEffect(() => {
       const syncStats = async () => {
-          // OPRAVA: Odstránená podmienka || groups.length === 0
-          // Štatistiky sa musia synchronizovať aj keď lokálne pole groups ešte nie je plné,
-          // pretože update v DB sa robí podľa user_id pre všetky záznamy.
           if (!currentUserId) return;
           
           try {
@@ -237,7 +234,31 @@ const TeamView: React.FC<TeamViewProps> = ({ user, records, shiftConfig }) => {
     setGroups(prev => prev.map(updateGroupData));
     setSelectedGroup(prev => prev ? updateGroupData(prev) : null);
 
-  }, [myStats, currentUserId]); // Trigger whenever my local calculations change
+  }, [myStats, currentUserId]); 
+
+  // --- 5. REALTIME LISTENERS ---
+  // Listen for changes in group_members table and refresh data
+  useEffect(() => {
+    const channel = supabase
+      .channel('public:group_members')
+      .on(
+        'postgres_changes',
+        {
+          event: '*', // Listen for INSERT, UPDATE, DELETE
+          schema: 'public',
+          table: 'group_members'
+        },
+        (payload) => {
+          // When a change is detected, re-fetch the groups to get updated stats
+          fetchGroups();
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [fetchGroups]);
 
   const generateInviteCode = () => {
       const chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
