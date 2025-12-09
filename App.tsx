@@ -13,16 +13,30 @@ const App: React.FC = () => {
   
   // Data State
   const [records, setRecords] = useState<AttendanceRecord[]>([]);
-  const [shiftConfig, setShiftConfig] = useState<ShiftConfig>({
-    startDate: new Date().toISOString().split('T')[0],
-    cycle: ['R', 'R', 'R', 'R', 'R', 'V', 'V'],
-    shiftLength: 8,
-    isActive: false,
-    shiftTimes: {
-      'R': { start: '06:00', end: '14:00' },
-      'P': { start: '14:00', end: '22:00' },
-      'N': { start: '22:00', end: '06:00' }
+  
+  // Initialize shiftConfig from localStorage if available
+  const [shiftConfig, setShiftConfig] = useState<ShiftConfig>(() => {
+    try {
+      const savedConfig = localStorage.getItem('shift_config');
+      if (savedConfig) {
+        return JSON.parse(savedConfig);
+      }
+    } catch (error) {
+      console.error('Error parsing shift_config from localStorage', error);
     }
+    
+    // Default config if nothing saved
+    return {
+      startDate: new Date().toISOString().split('T')[0],
+      cycle: ['R', 'R', 'R', 'R', 'R', 'V', 'V'],
+      shiftLength: 8,
+      isActive: false,
+      shiftTimes: {
+        'R': { start: '06:00', end: '14:00' },
+        'P': { start: '14:00', end: '22:00' },
+        'N': { start: '22:00', end: '06:00' }
+      }
+    };
   });
 
   // --- 1. SESSION MANAGEMENT ---
