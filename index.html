@@ -23,6 +23,24 @@
         -ms-overflow-style: none;
         scrollbar-width: none;
       }
+      
+      /* --- SMART SCALING PRE MALÉ DISPLEJE --- */
+      @media (max-width: 380px) {
+        html {
+          /* Zmenšenie základnej jednotky (rem) zo 16px na 13.5px.
+             Toto automaticky zmenší všetky paddingy, marginy, fonty a šírky
+             definované cez Tailwind o cca 15%, čím sa UI zmestí na iPhone Mini. */
+          font-size: 13.5px; 
+        }
+      }
+      
+      /* Pre veľmi nízke obrazovky (iPhone SE / 8) */
+      @media (max-height: 700px) {
+        .compact-mode {
+           padding-top: 1rem !important;
+           padding-bottom: 5rem !important;
+        }
+      }
     </style>
 <script type="importmap">
 {
