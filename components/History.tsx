@@ -172,7 +172,11 @@ const TeamView: React.FC<TeamViewProps> = ({ user, records, shiftConfig }) => {
   // --- 3. Sync My Stats to Cloud ---
   useEffect(() => {
       const syncStats = async () => {
-          if (!currentUserId || groups.length === 0) return;
+          // OPRAVA: Odstránená podmienka || groups.length === 0
+          // Štatistiky sa musia synchronizovať aj keď lokálne pole groups ešte nie je plné,
+          // pretože update v DB sa robí podľa user_id pre všetky záznamy.
+          if (!currentUserId) return;
+          
           try {
              await supabase
                 .from('group_members')
