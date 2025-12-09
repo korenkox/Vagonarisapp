@@ -1,7 +1,7 @@
 
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { User } from '../types';
-import { Shield, Bell, Settings, LogOut, ChevronRight, User as UserIcon } from 'lucide-react';
+import { Shield, Bell, Settings, LogOut, ChevronRight, User as UserIcon, Download } from 'lucide-react';
 
 interface ProfileProps {
   user: User;
@@ -9,6 +9,37 @@ interface ProfileProps {
 }
 
 const Profile: React.FC<ProfileProps> = ({ user, onLogout }) => {
+  const [deferredPrompt, setDeferredPrompt] = useState<any>(null);
+  const [isInstallable, setIsInstallable] = useState(false);
+
+  useEffect(() => {
+    const handleBeforeInstallPrompt = (e: any) => {
+      // Prevent Chrome 67 and earlier from automatically showing the prompt
+      e.preventDefault();
+      // Stash the event so it can be triggered later.
+      setDeferredPrompt(e);
+      setIsInstallable(true);
+    };
+
+    window.addEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
+
+    return () => {
+      window.removeEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
+    };
+  }, []);
+
+  const handleInstallClick = async () => {
+    if (!deferredPrompt) return;
+    // Show the install prompt
+    deferredPrompt.prompt();
+    // Wait for the user to respond to the prompt
+    const { outcome } = await deferredPrompt.userChoice;
+    if (outcome === 'accepted') {
+      setIsInstallable(false);
+    }
+    setDeferredPrompt(null);
+  };
+
   return (
     <div className="pt-8 px-6 pb-32 animate-fade-in">
       <div className="mb-8 pt-4">
@@ -35,6 +66,30 @@ const Profile: React.FC<ProfileProps> = ({ user, onLogout }) => {
 
       {/* Settings Section */}
       <div className="space-y-6">
+        
+        {/* Install App Section - Only visible if installable */}
+        {isInstallable && (
+            <>
+                <h3 className="text-xs font-bold text-gray-400 uppercase tracking-widest pl-4">Aplikácia</h3>
+                <div className="bg-white/60 backdrop-blur-lg rounded-3xl overflow-hidden border border-white/50 shadow-sm">
+                    <button 
+                        onClick={handleInstallClick}
+                        className="w-full p-5 flex items-center justify-between hover:bg-blue-50/50 transition-colors group"
+                    >
+                        <div className="flex items-center gap-4">
+                        <div className="w-10 h-10 rounded-full bg-blue-600 flex items-center justify-center text-white shadow-lg shadow-blue-500/30 group-hover:scale-110 transition-transform">
+                            <Download size={20} />
+                        </div>
+                        <div className="text-left">
+                            <span className="font-bold text-gray-900 block">Nainštalovať aplikáciu</span>
+                            <span className="text-xs text-gray-500">Pridať na plochu telefónu</span>
+                        </div>
+                        </div>
+                    </button>
+                </div>
+            </>
+        )}
+
         <h3 className="text-xs font-bold text-gray-400 uppercase tracking-widest pl-4">Nastavenia účtu</h3>
         
         <div className="bg-white/60 backdrop-blur-lg rounded-3xl overflow-hidden border border-white/50 shadow-sm">
@@ -61,7 +116,7 @@ const Profile: React.FC<ProfileProps> = ({ user, onLogout }) => {
           </div>
         </div>
 
-        <h3 className="text-xs font-bold text-gray-400 uppercase tracking-widest pl-4">Aplikácia</h3>
+        <h3 className="text-xs font-bold text-gray-400 uppercase tracking-widest pl-4">Systém</h3>
         
         <div className="bg-white/60 backdrop-blur-lg rounded-3xl overflow-hidden border border-white/50 shadow-sm">
           <button className="w-full p-5 flex items-center justify-between hover:bg-white/50 transition-colors border-b border-gray-100/50">
