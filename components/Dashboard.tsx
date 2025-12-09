@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { User, AttendanceRecord, ShiftConfig, DashboardTab } from '../types';
 import ManualEntry from './ManualEntry';
@@ -75,7 +74,7 @@ const Dashboard: React.FC<DashboardProps> = ({
 
       {/* 4. Bottom Navigation Bar - Fixed Dock (Optimized for Small Screens) */}
       <div className="fixed bottom-0 left-0 right-0 z-50 flex justify-center">
-        <div className="w-full max-w-lg bg-white/90 backdrop-blur-xl border-t border-white/50 shadow-[0_-10px_40px_-15px_rgba(0,0,0,0.1)] rounded-t-[32px] px-6 pb-6 pt-3 md:px-8 md:pb-8 md:pt-4 flex justify-between items-center transition-all duration-300">
+        <div className="w-full max-w-lg bg-white/90 backdrop-blur-xl border-t border-white/50 shadow-[0_-10px_40px_-15px_rgba(0,0,0,0.1)] rounded-t-[32px] px-6 pb-5 pt-2 md:px-8 md:pb-8 md:pt-4 flex justify-between items-center transition-all duration-300">
            
            <NavButton 
               isActive={activeTab === 'HOME'} 
