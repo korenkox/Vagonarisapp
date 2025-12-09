@@ -1,5 +1,5 @@
 
-import React, { useState, useEffect, useMemo, useCallback } from 'react';
+import React, { useState, useEffect, useMemo, useCallback, useRef } from 'react';
 import { createPortal } from 'react-dom';
 import { Plus, ArrowLeft, Zap, Crown, UserMinus, Settings, Power, Activity, Lock, Unlock, Users, Share2, Copy, LogIn, CheckCircle, MoreVertical, X, Trash2, ShieldAlert } from 'lucide-react';
 import { Group, AttendanceRecord, ShiftConfig, User, GroupMember } from '../types';
@@ -16,6 +16,9 @@ const TeamView: React.FC<TeamViewProps> = ({ user, records, shiftConfig }) => {
   const [groups, setGroups] = useState<Group[]>([]);
   const [selectedGroup, setSelectedGroup] = useState<Group | null>(null);
   
+  // Ref pre sledovanie ID vybranej skupiny bez vyvolania re-renderu v závislostiach
+  const selectedGroupIdRef = useRef<string | null>(null);
+
   // Loading states
   const [loading, setLoading] = useState(false);
   
@@ -33,6 +36,11 @@ const TeamView: React.FC<TeamViewProps> = ({ user, records, shiftConfig }) => {
   const [memberToManage, setMemberToManage] = useState<GroupMember | null>(null);
 
   const [currentUserId, setCurrentUserId] = useState<string>('');
+
+  // Aktualizácia refu vždy keď sa zmení state
+  useEffect(() => {
+    selectedGroupIdRef.current = selectedGroup?.id || null;
+  }, [selectedGroup]);
 
   // --- 0. Get Current User ID ---
   useEffect(() => {
@@ -107,9 +115,9 @@ const TeamView: React.FC<TeamViewProps> = ({ user, records, shiftConfig }) => {
   }, [records, shiftConfig]); 
 
   // --- 2. Fetch Groups from Supabase ---
-  const fetchGroups = useCallback(async () => {
-      // Don't set loading true on initial fetch if we want silent updates
-      if (groups.length === 0) setLoading(true);
+  // OPRAVA: Odstránená závislosť na 'selectedGroup' a 'groups.length', ktorá spôsobovala loop.
+  const fetchGroups = useCallback(async (isInitial = false) => {
+      if (isInitial) setLoading(true);
       
       try {
           const { data: groupsData, error: groupsError } = await supabase
@@ -157,9 +165,14 @@ const TeamView: React.FC<TeamViewProps> = ({ user, records, shiftConfig }) => {
 
           setGroups(constructedGroups);
           
-          if (selectedGroup) {
-              const updatedSelected = constructedGroups.find(g => g.id === selectedGroup.id);
-              if (updatedSelected) setSelectedGroup(updatedSelected);
+          // Bezpečný update vybranej skupiny pomocou Refu
+          const currentSelectedId = selectedGroupIdRef.current;
+          if (currentSelectedId) {
+              const updatedSelected = constructedGroups.find(g => g.id === currentSelectedId);
+              if (updatedSelected) {
+                  // Iba ak sa dáta naozaj zmenili (pre istotu)
+                  setSelectedGroup(updatedSelected);
+              }
           }
 
       } catch (err) {
@@ -167,11 +180,11 @@ const TeamView: React.FC<TeamViewProps> = ({ user, records, shiftConfig }) => {
       } finally {
           setLoading(false);
       }
-  }, [selectedGroup, groups.length]);
+  }, []); // Empty dependencies array prevents infinite loop
 
   useEffect(() => {
-      fetchGroups();
-  }, []);
+      fetchGroups(true);
+  }, [fetchGroups]);
 
   // --- 3. Sync My Stats to Cloud ---
   useEffect(() => {
@@ -201,47 +214,7 @@ const TeamView: React.FC<TeamViewProps> = ({ user, records, shiftConfig }) => {
       return () => clearTimeout(timer);
   }, [myStats, currentUserId, user.name]);
 
-  // --- 4. OPTIMISTIC UPDATE: Update local state immediately when my config changes ---
-  useEffect(() => {
-    if (!currentUserId) return;
-
-    // Function to calculate updated group with MY new stats
-    const updateGroupData = (g: Group): Group => {
-        const memberIndex = g.members.findIndex(m => m.id === currentUserId);
-        if (memberIndex === -1) return g;
-
-        // Clone and update my specific member record
-        const updatedMembers = [...g.members];
-        updatedMembers[memberIndex] = {
-            ...updatedMembers[memberIndex],
-            workedHours: myStats.worked,
-            normHours: myStats.norm,
-            calendarFund: myStats.calendarFund
-        };
-
-        // Recalculate group totals based on new member data
-        const totalW = updatedMembers.reduce((sum, m) => sum + m.workedHours, 0);
-        const totalN = updatedMembers.reduce((sum, m) => sum + m.normHours, 0);
-        const totalCF = updatedMembers.reduce((sum, m) => sum + (m.calendarFund || 0), 0);
-
-        return {
-            ...g,
-            members: updatedMembers,
-            totalWorked: parseFloat(totalW.toFixed(1)),
-            totalNorm: totalN,
-            totalCalendarFund: totalCF,
-            efficiency: totalW > 0 ? Math.round((totalN / totalW) * 100) : 0
-        };
-    };
-
-    // Apply updates to list and detailed view
-    setGroups(prev => prev.map(updateGroupData));
-    setSelectedGroup(prev => prev ? updateGroupData(prev) : null);
-
-  }, [myStats, currentUserId]); 
-
-  // --- 5. REALTIME LISTENERS ---
-  // Listen for changes in group_members table and refresh data
+  // --- 4. REALTIME LISTENERS ---
   useEffect(() => {
     const channel = supabase
       .channel('public:group_members')
@@ -252,8 +225,7 @@ const TeamView: React.FC<TeamViewProps> = ({ user, records, shiftConfig }) => {
           schema: 'public',
           table: 'group_members'
         },
-        (payload) => {
-          // When a change is detected, re-fetch the groups to get updated stats
+        () => {
           fetchGroups();
         }
       )
