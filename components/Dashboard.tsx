@@ -73,35 +73,35 @@ const Dashboard: React.FC<DashboardProps> = ({
         {renderContent()}
       </main>
 
-      {/* 4. Bottom Navigation Bar - Fixed Dock */}
+      {/* 4. Bottom Navigation Bar - Fixed Dock (Optimized for Small Screens) */}
       <div className="fixed bottom-0 left-0 right-0 z-50 flex justify-center">
-        <div className="w-full max-w-lg bg-white/90 backdrop-blur-xl border-t border-white/50 shadow-[0_-10px_40px_-15px_rgba(0,0,0,0.1)] rounded-t-[32px] px-8 pb-8 pt-4 flex justify-between items-center transition-all duration-300">
+        <div className="w-full max-w-lg bg-white/90 backdrop-blur-xl border-t border-white/50 shadow-[0_-10px_40px_-15px_rgba(0,0,0,0.1)] rounded-t-[32px] px-6 pb-6 pt-3 md:px-8 md:pb-8 md:pt-4 flex justify-between items-center transition-all duration-300">
            
            <NavButton 
               isActive={activeTab === 'HOME'} 
               onClick={() => setActiveTab('HOME')} 
-              icon={<Home size={26} strokeWidth={2.5} />} 
+              icon={<Home size={24} strokeWidth={2.5} />} 
               label="Domov"
               activeColor="text-blue-600"
            />
            <NavButton 
               isActive={activeTab === 'CALENDAR'} 
               onClick={() => setActiveTab('CALENDAR')} 
-              icon={<Calendar size={26} strokeWidth={2.5} />} 
+              icon={<Calendar size={24} strokeWidth={2.5} />} 
               label="Kalendár"
               activeColor="text-indigo-600"
            />
            <NavButton 
               isActive={activeTab === 'TEAM'} 
               onClick={() => setActiveTab('TEAM')} 
-              icon={<Users size={26} strokeWidth={2.5} />} 
+              icon={<Users size={24} strokeWidth={2.5} />} 
               label="Tím"
               activeColor="text-rose-600"
            />
            <NavButton 
               isActive={activeTab === 'PROFILE'} 
               onClick={() => setActiveTab('PROFILE')} 
-              icon={<UserIcon size={26} strokeWidth={2.5} />} 
+              icon={<UserIcon size={24} strokeWidth={2.5} />} 
               label="Profil"
               activeColor="text-teal-600"
            />
@@ -140,15 +140,15 @@ const Dashboard: React.FC<DashboardProps> = ({
 const NavButton = ({ isActive, onClick, icon, label, activeColor }: any) => (
   <button 
     onClick={onClick}
-    className={`relative flex flex-col items-center justify-center w-16 transition-all duration-300 ${isActive ? '-translate-y-1 opacity-100' : 'opacity-50 hover:opacity-100'}`}
+    className={`relative flex flex-col items-center justify-center w-14 md:w-16 transition-all duration-300 ${isActive ? '-translate-y-1 opacity-100' : 'opacity-50 hover:opacity-100'}`}
   >
     <div className={`
       ${isActive ? activeColor : 'text-gray-600'}
-      transition-colors duration-300 mb-1 transform ${isActive ? 'scale-110' : 'scale-100'}
+      transition-colors duration-300 mb-0.5 md:mb-1 transform ${isActive ? 'scale-110' : 'scale-100'}
     `}>
       {icon}
     </div>
-    <span className={`text-[10px] font-bold uppercase tracking-wider ${isActive ? activeColor : 'text-gray-500'} transition-colors duration-300`}>
+    <span className={`text-[9px] md:text-[10px] font-bold uppercase tracking-wider ${isActive ? activeColor : 'text-gray-500'} transition-colors duration-300`}>
       {label}
     </span>
     {isActive && (
