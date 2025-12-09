@@ -127,11 +127,12 @@ const App: React.FC = () => {
 
           if (error) {
               console.error('Error saving record:', error);
-              // Rollback if needed (advanced)
-              alert('Chyba pri ukladaní záznamu do cloudu!');
+              // Show specific error from DB to help with debugging (e.g. RLS policy violation)
+              alert(`Chyba pri ukladaní: ${error.message}`);
           }
-      } catch (err) {
+      } catch (err: any) {
           console.error('Async error:', err);
+          alert(`Neočakávaná chyba: ${err.message}`);
       }
   };
 
