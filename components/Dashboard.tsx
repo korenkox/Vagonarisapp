@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { User, AttendanceRecord, ShiftConfig, DashboardTab } from '../types';
 import ManualEntry from './ManualEntry';
@@ -51,16 +52,16 @@ const Dashboard: React.FC<DashboardProps> = ({
   };
 
   return (
-    <div className={`min-h-screen relative overflow-hidden bg-gradient-to-br ${getGradient()} transition-colors duration-1000`}>
+    <div className={`min-h-screen relative bg-gradient-to-br ${getGradient()} transition-colors duration-1000`}>
       
-      {/* 1. Grain Texture Overlay */}
+      {/* 1. Grain Texture Overlay - Fixed */}
       <div className="fixed inset-0 z-0 pointer-events-none opacity-[0.03]"
            style={{
              backgroundImage: `url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)'/%3E%3C/svg%3E")`
            }}
       />
 
-      {/* 2. Aurora Background Blobs */}
+      {/* 2. Aurora Background Blobs - Fixed & Hidden Overflow here */}
       <div className="fixed inset-0 z-0 overflow-hidden pointer-events-none">
         <div className="absolute top-[-10%] left-[-10%] w-96 h-96 bg-blue-300/20 rounded-full blur-[100px] animate-blob" />
         <div className="absolute top-[20%] right-[-10%] w-96 h-96 bg-purple-300/20 rounded-full blur-[100px] animate-blob animation-delay-2000" />
@@ -73,8 +74,8 @@ const Dashboard: React.FC<DashboardProps> = ({
       </main>
 
       {/* 4. Bottom Navigation Bar - Fixed Dock (Optimized for Small Screens) */}
-      <div className="fixed bottom-0 left-0 right-0 z-50 flex justify-center">
-        <div className="w-full max-w-lg bg-white/90 backdrop-blur-xl border-t border-white/50 shadow-[0_-10px_40px_-15px_rgba(0,0,0,0.1)] rounded-t-[32px] px-6 pb-5 pt-2 md:px-8 md:pb-8 md:pt-4 flex justify-between items-center transition-all duration-300">
+      <div className="fixed bottom-0 left-0 right-0 z-50 flex justify-center pointer-events-none">
+        <div className="w-full max-w-lg bg-white/90 backdrop-blur-xl border-t border-white/50 shadow-[0_-10px_40px_-15px_rgba(0,0,0,0.1)] rounded-t-[32px] px-6 pb-5 pt-2 md:px-8 md:pb-8 md:pt-4 flex justify-between items-center transition-all duration-300 pointer-events-auto">
            
            <NavButton 
               isActive={activeTab === 'HOME'} 
@@ -130,6 +131,13 @@ const Dashboard: React.FC<DashboardProps> = ({
         @keyframes fadeIn {
           from { opacity: 0; transform: translateY(10px); }
           to { opacity: 1; transform: translateY(0); }
+        }
+        @keyframes scaleIn {
+            from { transform: scale(0); opacity: 0; }
+            to { transform: scale(1); opacity: 1; }
+        }
+        .animate-scale-in {
+            animation: scaleIn 0.3s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
         }
       `}</style>
     </div>
