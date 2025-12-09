@@ -1,7 +1,8 @@
 
+
 import React, { useState, useEffect, useMemo, useCallback, useRef } from 'react';
 import { createPortal } from 'react-dom';
-import { Plus, ArrowLeft, Zap, Crown, UserMinus, Settings, Power, Activity, Lock, Unlock, Users, Share2, Copy, LogIn, CheckCircle, MoreVertical, X, Trash2, ShieldAlert } from 'lucide-react';
+import { Plus, ArrowLeft, Zap, Crown, UserMinus, Settings, Power, Activity, Lock, Unlock, Users, Share2, Copy, LogIn, CheckCircle, MoreVertical, X, Trash2, ShieldAlert, Briefcase, Clock, Calendar } from 'lucide-react';
 import { Group, AttendanceRecord, ShiftConfig, User, GroupMember } from '../types';
 import { supabase } from '../supabaseClient';
 
@@ -115,7 +116,6 @@ const TeamView: React.FC<TeamViewProps> = ({ user, records, shiftConfig }) => {
   }, [records, shiftConfig]); 
 
   // --- 2. Fetch Groups from Supabase ---
-  // OPRAVA: Odstránená závislosť na 'selectedGroup' a 'groups.length', ktorá spôsobovala loop.
   const fetchGroups = useCallback(async (isInitial = false) => {
       if (isInitial) setLoading(true);
       
@@ -150,6 +150,10 @@ const TeamView: React.FC<TeamViewProps> = ({ user, records, shiftConfig }) => {
               const totalN = members.reduce((sum, m) => sum + m.normHours, 0);
               const totalCF = members.reduce((sum, m) => sum + (m.calendarFund || 0), 0);
               
+              // Efficiency Logic: Norm / Worked * 100
+              // If Norm is 100h and Worked is 80h -> 125% Efficiency (Saved time)
+              const efficiency = totalW > 0 ? Math.round((totalN / totalW) * 100) : 0;
+              
               return {
                   id: g.id,
                   name: g.name,
@@ -157,20 +161,18 @@ const TeamView: React.FC<TeamViewProps> = ({ user, records, shiftConfig }) => {
                   adminId: g.admin_id,
                   members: members,
                   totalWorked: parseFloat(totalW.toFixed(1)),
-                  totalNorm: totalN,
-                  totalCalendarFund: totalCF,
-                  efficiency: totalW > 0 ? Math.round((totalN / totalW) * 100) : 0
+                  totalNorm: parseFloat(totalN.toFixed(1)),
+                  totalCalendarFund: parseFloat(totalCF.toFixed(1)),
+                  efficiency: efficiency
               };
           });
 
           setGroups(constructedGroups);
           
-          // Bezpečný update vybranej skupiny pomocou Refu
           const currentSelectedId = selectedGroupIdRef.current;
           if (currentSelectedId) {
               const updatedSelected = constructedGroups.find(g => g.id === currentSelectedId);
               if (updatedSelected) {
-                  // Iba ak sa dáta naozaj zmenili (pre istotu)
                   setSelectedGroup(updatedSelected);
               }
           }
@@ -180,7 +182,7 @@ const TeamView: React.FC<TeamViewProps> = ({ user, records, shiftConfig }) => {
       } finally {
           setLoading(false);
       }
-  }, []); // Empty dependencies array prevents infinite loop
+  }, []);
 
   useEffect(() => {
       fetchGroups(true);
@@ -221,7 +223,7 @@ const TeamView: React.FC<TeamViewProps> = ({ user, records, shiftConfig }) => {
       .on(
         'postgres_changes',
         {
-          event: '*', // Listen for INSERT, UPDATE, DELETE
+          event: '*',
           schema: 'public',
           table: 'group_members'
         },
@@ -361,8 +363,6 @@ const TeamView: React.FC<TeamViewProps> = ({ user, records, shiftConfig }) => {
 
   const handleRemoveMember = async (memberId: string) => {
       if (!selectedGroup) return;
-      
-      // Close modal first
       setMemberToManage(null);
 
       try {
@@ -491,24 +491,27 @@ const TeamView: React.FC<TeamViewProps> = ({ user, records, shiftConfig }) => {
   if (view === 'DETAIL' && selectedGroup) {
       const isHighEnergy = selectedGroup.efficiency >= 100;
       
+      // Calculate Balance (Positive = Time Saved = Norm > Worked)
+      // Example: Norm 20h, Worked 15h. Balance = +5h. Efficiency > 100%.
+      const balance = selectedGroup.totalNorm - selectedGroup.totalWorked;
+      const isPositiveBalance = balance >= 0;
+
       const theme = {
-          primary: isHighEnergy ? 'text-amber-500' : 'text-indigo-500',
-          bg: isHighEnergy ? 'bg-amber-500' : 'bg-indigo-500',
-          gradient: isHighEnergy ? 'from-amber-400 to-orange-500' : 'from-indigo-400 to-blue-500',
-          shadow: isHighEnergy ? 'shadow-amber-500/40' : 'shadow-indigo-500/40',
-          glow: isHighEnergy ? 'bg-amber-400/20' : 'bg-indigo-400/20',
-          border: isHighEnergy ? 'border-amber-200' : 'border-indigo-200',
-          fill: isHighEnergy ? 'bg-gradient-to-t from-amber-500/80 to-orange-400/80' : 'bg-gradient-to-t from-indigo-500/80 to-blue-400/80'
+          primary: isHighEnergy ? 'text-teal-500' : 'text-indigo-500',
+          bg: isHighEnergy ? 'bg-teal-500' : 'bg-indigo-500',
+          gradient: isHighEnergy ? 'from-teal-400 to-emerald-500' : 'from-indigo-400 to-blue-500',
+          glow: isHighEnergy ? 'bg-teal-400/20' : 'bg-indigo-400/20',
+          fill: isHighEnergy ? 'bg-gradient-to-t from-teal-500/80 to-emerald-400/80' : 'bg-gradient-to-t from-indigo-500/80 to-blue-400/80'
       };
 
       const fillHeight = Math.min(100, selectedGroup.efficiency);
 
       return (
         <div className="pt-8 px-6 pb-32 animate-fade-in min-h-screen relative overflow-hidden bg-slate-50">
-            <div className={`absolute top-[-20%] left-[-20%] w-[600px] h-[600px] rounded-full blur-[120px] opacity-40 transition-colors duration-1000 pointer-events-none ${isHighEnergy ? 'bg-amber-200' : 'bg-indigo-200'}`} />
+            <div className={`absolute top-[-20%] left-[-20%] w-[600px] h-[600px] rounded-full blur-[120px] opacity-40 transition-colors duration-1000 pointer-events-none ${isHighEnergy ? 'bg-teal-200' : 'bg-indigo-200'}`} />
             
             {/* Detail Header */}
-            <div className="flex justify-between items-start mb-8 pt-4 relative z-40">
+            <div className="flex justify-between items-start mb-6 pt-4 relative z-40">
                 <div className="flex items-center gap-4">
                     <button onClick={() => setView('LIST')} className="p-3 bg-white/60 backdrop-blur-md rounded-full hover:bg-white transition-all shadow-sm border border-white/50 group">
                         <ArrowLeft size={24} className="text-gray-600 group-hover:-translate-x-1 transition-transform" />
@@ -523,7 +526,6 @@ const TeamView: React.FC<TeamViewProps> = ({ user, records, shiftConfig }) => {
                 </div>
                 
                 <div className="flex gap-2">
-                    {/* Invite Button (Admin Only) */}
                     {isAdmin && (
                         <button 
                             onClick={() => setShowInviteModal(true)}
@@ -541,12 +543,11 @@ const TeamView: React.FC<TeamViewProps> = ({ user, records, shiftConfig }) => {
                 </div>
             </div>
 
-            {/* Energy Core Visualization */}
-            <div className="relative w-full flex flex-col items-center justify-center mb-12 py-4">
+            {/* Energy Core Visualization (UPDATED) */}
+            <div className="relative w-full flex flex-col items-center justify-center mb-10 py-4">
                 <div className="relative w-[280px] h-[280px] flex items-center justify-center">
                     <div className={`absolute inset-0 rounded-full blur-[60px] animate-pulse-slow transition-colors duration-1000 ${theme.glow}`} />
                     <div className="absolute inset-0 rounded-full border-2 border-dashed border-gray-300/50 animate-spin-slow" />
-                    <div className="absolute inset-4 rounded-full border border-gray-400/30 animate-reverse-spin" />
                     <div className="absolute inset-8 rounded-full overflow-hidden bg-white/40 backdrop-blur-sm border border-white/60 shadow-inner z-10">
                          <div 
                             className={`absolute bottom-0 left-0 right-0 transition-all duration-1000 ease-in-out ${theme.fill}`}
@@ -556,38 +557,67 @@ const TeamView: React.FC<TeamViewProps> = ({ user, records, shiftConfig }) => {
                          </div>
                          <div className="absolute inset-0 flex flex-col items-center justify-center z-20">
                             <div className="flex items-baseline gap-1 drop-shadow-sm">
-                                <span className={`text-6xl font-light tracking-tighter text-gray-900 mix-blend-multiply`}>
+                                <span className="text-6xl font-light tracking-tighter text-gray-900 mix-blend-multiply">
                                     {selectedGroup.efficiency}
                                 </span>
                                 <span className="text-lg font-medium text-gray-600 mix-blend-multiply">%</span>
                             </div>
                             <div className="text-xs font-bold uppercase tracking-widest text-gray-500 mt-1 mix-blend-multiply opacity-80">
-                                Účinnosť
+                                Účinnosť Skupiny
                             </div>
                          </div>
                     </div>
                 </div>
 
+                {/* Balance Pill */}
                 <div className={`
-                    mt-[-20px] relative z-20 px-6 py-2 rounded-full bg-white shadow-xl shadow-gray-200/50 border border-gray-100 flex items-center gap-3
-                    transition-all duration-500
+                    mt-[-30px] relative z-20 px-6 py-2.5 rounded-full shadow-xl border flex items-center gap-3 transition-all duration-500
+                    ${isPositiveBalance ? 'bg-teal-50 border-teal-100' : 'bg-rose-50 border-rose-100'}
                 `}>
-                    <div className={`w-2 h-2 rounded-full ${isHighEnergy ? 'bg-amber-500 animate-pulse' : 'bg-blue-500'}`} />
-                    <div className="flex items-baseline gap-1">
-                        <span className="text-lg font-bold text-gray-900">{Math.floor(selectedGroup.totalWorked)}h</span>
-                        <span className="text-xs font-medium text-gray-400">/ {selectedGroup.totalCalendarFund || selectedGroup.totalNorm}h</span>
+                    <div className={`
+                        flex items-center justify-center w-6 h-6 rounded-full 
+                        ${isPositiveBalance ? 'bg-teal-500 text-white' : 'bg-rose-500 text-white'}
+                    `}>
+                         {isPositiveBalance ? <Zap size={14} fill="currentColor" /> : <ShieldAlert size={14} />}
                     </div>
-                    <div className="h-4 w-[1px] bg-gray-200" />
-                    <span className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">Fond</span>
+                    <div className="flex items-baseline gap-1">
+                        <span className={`text-lg font-black ${isPositiveBalance ? 'text-teal-700' : 'text-rose-700'}`}>
+                            {isPositiveBalance ? '+' : ''}{balance.toFixed(1)}h
+                        </span>
+                        <span className={`text-[10px] font-bold uppercase tracking-wider ${isPositiveBalance ? 'text-teal-500' : 'text-rose-500'}`}>
+                            {isPositiveBalance ? 'Ušetrené' : 'Nad Rámec'}
+                        </span>
+                    </div>
                 </div>
             </div>
 
-            {/* Members List */}
-            <div className="space-y-4">
-                <div className="flex justify-between items-end px-2">
-                    <h3 className="text-xs font-bold text-gray-400 uppercase tracking-widest">Aktívne Moduly ({selectedGroup.members.length})</h3>
+            {/* 3-Column Stats Grid */}
+            <div className="grid grid-cols-3 gap-3 px-2 mb-8">
+                <div className="bg-white/70 backdrop-blur-md rounded-2xl p-3 border border-white shadow-sm flex flex-col items-center">
+                    <span className="text-[9px] font-bold text-gray-400 uppercase tracking-widest mb-1">NH</span>
+                    <span className="text-lg font-bold text-gray-900">{selectedGroup.totalNorm}h</span>
+                    <Briefcase size={12} className="text-gray-300 mt-1" />
                 </div>
+                <div className="bg-white/70 backdrop-blur-md rounded-2xl p-3 border border-white shadow-sm flex flex-col items-center relative overflow-hidden">
+                    <div className="absolute top-0 left-0 w-full h-1 bg-blue-500/50" />
+                    <span className="text-[9px] font-bold text-blue-500 uppercase tracking-widest mb-1">Odpracované</span>
+                    <span className="text-lg font-bold text-blue-600">{selectedGroup.totalWorked}h</span>
+                    <Clock size={12} className="text-blue-300 mt-1" />
+                </div>
+                <div className="bg-gray-100/50 backdrop-blur-md rounded-2xl p-3 border border-transparent flex flex-col items-center opacity-80">
+                    <span className="text-[9px] font-bold text-gray-400 uppercase tracking-widest mb-1">Fond</span>
+                    <span className="text-lg font-bold text-gray-500">{selectedGroup.totalCalendarFund}h</span>
+                    <Calendar size={12} className="text-gray-300 mt-1" />
+                </div>
+            </div>
 
+            {/* Members List Header */}
+            <div className="flex justify-between items-end px-2 mb-4">
+                <h3 className="text-xs font-bold text-gray-400 uppercase tracking-widest">Členovia tímu ({selectedGroup.members.length})</h3>
+            </div>
+
+            {/* Members List - Updated Design */}
+            <div className="space-y-3">
                 {selectedGroup.members.map((member, index) => {
                     const eff = member.workedHours > 0 
                         ? Math.round((member.normHours / member.workedHours) * 100) 
@@ -596,51 +626,59 @@ const TeamView: React.FC<TeamViewProps> = ({ user, records, shiftConfig }) => {
                     return (
                         <div 
                             key={member.id} 
-                            className="group relative bg-white/70 backdrop-blur-md rounded-[24px] p-4 flex items-center justify-between border border-white shadow-lg shadow-gray-200/20 hover:shadow-xl transition-all duration-300 animate-slide-up"
+                            className="group relative bg-white rounded-[20px] p-3 pl-4 flex items-center justify-between border border-gray-100 shadow-lg shadow-gray-200/50 hover:shadow-xl hover:scale-[1.01] transition-all duration-300 animate-slide-up"
                             style={{ animationDelay: `${index * 100}ms` }}
                         >
-                            <div className="flex items-center gap-4 relative z-10 flex-1">
+                            {/* Left Side */}
+                            <div className="flex items-center gap-3 relative z-10 flex-1 min-w-0">
                                 <div className="relative flex-shrink-0">
                                     <div className={`
-                                        w-12 h-12 rounded-2xl flex items-center justify-center font-bold text-white text-lg shadow-md
+                                        w-10 h-10 rounded-xl flex items-center justify-center font-bold text-white text-sm shadow-md
                                         ${member.role === 'Admin' ? 'bg-gradient-to-br from-amber-400 to-orange-500' : 'bg-gradient-to-br from-slate-400 to-slate-600'}
                                     `}>
                                         {member.initials}
                                     </div>
                                     <div className={`
-                                        absolute -bottom-1 -right-1 w-4 h-4 border-2 border-white rounded-full flex items-center justify-center shadow-sm
-                                        ${member.status === 'online' ? 'bg-emerald-500 animate-pulse' : 'bg-gray-300'}
+                                        absolute -bottom-1 -right-1 w-3 h-3 border-2 border-white rounded-full flex items-center justify-center shadow-sm
+                                        ${member.status === 'online' ? 'bg-emerald-500' : 'bg-gray-300'}
                                     `} />
                                 </div>
                                 
                                 <div className="min-w-0">
                                     <div className="flex items-center gap-1.5">
                                         <div className="font-bold text-gray-900 text-sm truncate">{member.name}</div>
-                                        {member.role === 'Admin' && <Crown size={12} className="text-amber-500 fill-amber-500 flex-shrink-0" />}
+                                        {member.role === 'Admin' && <Crown size={10} className="text-amber-500 fill-amber-500 flex-shrink-0" />}
                                     </div>
-                                    <div className="text-[10px] font-bold text-gray-400 uppercase tracking-wide flex items-center gap-1">
+                                    <div className="text-[9px] font-bold text-gray-400 uppercase tracking-wide flex items-center gap-1">
                                         {member.role} 
-                                        <span className="w-1 h-1 rounded-full bg-gray-300" />
+                                        <span className="w-0.5 h-0.5 rounded-full bg-gray-300" />
                                         {eff}% Eff.
                                     </div>
                                 </div>
                             </div>
                             
-                            <div className="flex items-center gap-3 relative z-10">
-                                <div className="text-right">
-                                    <div className="font-bold text-gray-900 text-sm font-mono">{Math.floor(member.workedHours)}h</div>
-                                    <div className="text-[10px] font-medium text-gray-400 flex items-center justify-end gap-1">
-                                        <span>/ {member.calendarFund ?? member.normHours}h</span>
-                                        <span className="text-[8px] font-bold uppercase tracking-wider opacity-60">FOND</span>
+                            {/* Right Side: Stats (NH / ODP) */}
+                            <div className="flex items-center gap-3 relative z-10 pl-2">
+                                {/* Stats Block */}
+                                <div className="flex items-center gap-3 bg-gray-50/80 rounded-lg p-1.5 px-2.5 border border-gray-100">
+                                    <div className="flex flex-col items-end">
+                                        <span className="text-[8px] font-bold text-gray-400 uppercase tracking-widest">NH</span>
+                                        <span className="text-xs font-bold text-gray-500">{member.normHours}h</span>
+                                    </div>
+                                    <div className="w-px h-5 bg-gray-200" />
+                                    <div className="flex flex-col items-end">
+                                         <span className="text-[8px] font-bold text-blue-500 uppercase tracking-widest">ODP</span>
+                                         <span className="text-sm font-black text-gray-900">{Math.floor(member.workedHours)}h</span>
                                     </div>
                                 </div>
                                 
+                                {/* Admin Actions */}
                                 {isAdmin && member.id !== currentUserId && (
                                     <button 
                                         onClick={() => setMemberToManage(member)}
-                                        className="w-10 h-10 flex items-center justify-center rounded-full bg-transparent hover:bg-gray-100 text-gray-400 hover:text-gray-700 transition-colors"
+                                        className="w-8 h-8 flex items-center justify-center rounded-full bg-transparent hover:bg-gray-100 text-gray-400 hover:text-gray-700 transition-colors"
                                     >
-                                        <MoreVertical size={20} />
+                                        <MoreVertical size={16} />
                                     </button>
                                 )}
                             </div>
@@ -734,7 +772,7 @@ const TeamView: React.FC<TeamViewProps> = ({ user, records, shiftConfig }) => {
                     className="bg-white rounded-[32px] p-6 shadow-xl shadow-blue-900/5 hover:shadow-2xl hover:scale-[1.02] transition-all text-left relative overflow-hidden group animate-slide-up border border-white/50"
                     style={{ animationDelay: `${i * 100}ms` }}
                   >
-                      <div className={`absolute top-0 right-0 w-32 h-32 rounded-full -mr-10 -mt-10 transition-colors duration-500 opacity-20 ${isHighEnergy ? 'bg-amber-400' : 'bg-blue-400'}`} />
+                      <div className={`absolute top-0 right-0 w-32 h-32 rounded-full -mr-10 -mt-10 transition-colors duration-500 opacity-20 ${isHighEnergy ? 'bg-teal-400' : 'bg-blue-400'}`} />
                       
                       <div className="relative z-10 flex justify-between items-start mb-6">
                           <div>
@@ -745,7 +783,7 @@ const TeamView: React.FC<TeamViewProps> = ({ user, records, shiftConfig }) => {
                           </div>
                           <div className={`
                              w-10 h-10 rounded-full flex items-center justify-center border-2 
-                             ${isHighEnergy ? 'border-amber-100 bg-amber-50 text-amber-500' : 'border-blue-100 bg-blue-50 text-blue-500'}
+                             ${isHighEnergy ? 'border-teal-100 bg-teal-50 text-teal-500' : 'border-blue-100 bg-blue-50 text-blue-500'}
                           `}>
                                 <Zap size={18} fill="currentColor" />
                           </div>
@@ -754,11 +792,11 @@ const TeamView: React.FC<TeamViewProps> = ({ user, records, shiftConfig }) => {
                       <div className="relative z-10">
                            <div className="flex justify-between items-end mb-2">
                                <span className="text-3xl font-light text-gray-800">{group.efficiency}%</span>
-                               <span className="text-xs font-bold text-gray-400 mb-1">{Math.floor(group.totalWorked)}h / {group.totalCalendarFund || group.totalNorm}h</span>
+                               <span className="text-xs font-bold text-gray-400 mb-1">Účinnosť</span>
                            </div>
                            <div className="h-1.5 w-full bg-gray-100 rounded-full overflow-hidden">
                                 <div 
-                                    className={`h-full rounded-full ${isHighEnergy ? 'bg-amber-500' : 'bg-blue-500'}`} 
+                                    className={`h-full rounded-full ${isHighEnergy ? 'bg-teal-500' : 'bg-blue-500'}`} 
                                     style={{ width: `${Math.min(100, group.efficiency)}%` }}
                                 />
                            </div>
