@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { createPortal } from 'react-dom';
 import { AttendanceRecord, ShiftConfig } from '../types';
@@ -177,9 +176,9 @@ const ManualEntry: React.FC<ManualEntryProps> = ({ onSave, user, records = [], s
   };
 
   return (
-    <div className="pt-4 px-6 pb-28 animate-fade-in font-sans relative compact-mode">
+    <div className="pt-2 px-5 pb-24 animate-fade-in font-sans relative compact-mode-padding">
       {/* Header */}
-      <div className="flex justify-between items-center mb-6 pt-2">
+      <div className="flex justify-between items-center mb-4 pt-2">
          <div>
             <div className="flex items-center gap-2 mb-1">
                <div className="bg-gray-900 text-white p-1 rounded-md">
@@ -193,10 +192,10 @@ const ManualEntry: React.FC<ManualEntryProps> = ({ onSave, user, records = [], s
          </div>
       </div>
 
-      {/* Date Card */}
+      {/* Date Card - Compact Margin */}
       <button 
         onClick={() => setIsDatePickerOpen(true)}
-        className="w-full bg-white rounded-[28px] p-4 mb-5 flex items-center justify-between shadow-lg shadow-blue-900/5 cursor-pointer hover:scale-[1.02] active:scale-[0.98] transition-all group"
+        className="w-full bg-white rounded-[28px] p-4 mb-4 flex items-center justify-between shadow-lg shadow-blue-900/5 cursor-pointer hover:scale-[1.02] active:scale-[0.98] transition-all group"
       >
          <div className="flex items-center gap-4">
             <div className="w-10 h-10 bg-blue-50 text-blue-600 rounded-xl flex items-center justify-center group-hover:bg-blue-100 transition-colors">
@@ -210,13 +209,13 @@ const ManualEntry: React.FC<ManualEntryProps> = ({ onSave, user, records = [], s
          <ChevronRight className="text-gray-300 group-hover:text-blue-500 transition-colors" size={20} />
       </button>
 
-      {/* Time Inputs Row */}
+      {/* Time Inputs Row - Reduced Padding */}
       <div className="flex gap-3 mb-3">
          {/* Arrival */}
          <button 
             type="button"
             onClick={() => setActivePicker('arrival')}
-            className="flex-1 bg-white rounded-[28px] p-5 shadow-lg shadow-blue-900/5 relative overflow-hidden group cursor-pointer hover:shadow-xl active:scale-95 transition-all text-left w-full"
+            className="flex-1 bg-white rounded-[28px] p-4 shadow-lg shadow-blue-900/5 relative overflow-hidden group cursor-pointer hover:shadow-xl active:scale-95 transition-all text-left w-full"
          >
             <div className="text-[9px] font-bold text-gray-400 uppercase tracking-widest mb-1 group-hover:text-teal-500 transition-colors">Príchod</div>
             <div className="text-2xl font-light text-gray-800 mb-1 pointer-events-none">{arrivalTime}</div>
@@ -233,7 +232,7 @@ const ManualEntry: React.FC<ManualEntryProps> = ({ onSave, user, records = [], s
          <button 
             type="button"
             onClick={() => setActivePicker('departure')}
-            className="flex-1 bg-white rounded-[28px] p-5 shadow-lg shadow-blue-900/5 relative overflow-hidden group cursor-pointer hover:shadow-xl active:scale-95 transition-all text-left w-full"
+            className="flex-1 bg-white rounded-[28px] p-4 shadow-lg shadow-blue-900/5 relative overflow-hidden group cursor-pointer hover:shadow-xl active:scale-95 transition-all text-left w-full"
          >
             <div className="text-[9px] font-bold text-gray-400 uppercase tracking-widest mb-1 group-hover:text-indigo-500 transition-colors">Odchod</div>
             <div className="text-2xl font-light text-gray-800 mb-1 pointer-events-none">{departureTime}</div>
@@ -247,8 +246,8 @@ const ManualEntry: React.FC<ManualEntryProps> = ({ onSave, user, records = [], s
          </button>
       </div>
 
-      {/* Secondary Inputs Row */}
-      <div className="flex gap-3 mb-6">
+      {/* Secondary Inputs Row - Reduced Margin */}
+      <div className="flex gap-3 mb-5">
          {/* Normohodiny Input - Toned Down */}
          <div className="flex-1 bg-white rounded-[20px] px-5 py-3 flex flex-col justify-center shadow-lg shadow-blue-900/5 relative overflow-hidden group transition-all hover:shadow-xl border border-transparent focus-within:border-blue-100 focus-within:ring-4 focus-within:ring-blue-50/50">
             <div className="absolute -right-6 -bottom-6 w-16 h-16 bg-blue-50 rounded-full blur-2xl opacity-0 group-hover:opacity-100 transition-all duration-500 pointer-events-none" />
@@ -288,14 +287,14 @@ const ManualEntry: React.FC<ManualEntryProps> = ({ onSave, user, records = [], s
          </div>
       </div>
 
-      {/* Main Action - Premium Button */}
+      {/* Main Action - Reduced Margin */}
       <button 
         onClick={handleAnalyze}
         disabled={isAnalyzing}
         className={`w-full relative py-4 rounded-[20px] overflow-hidden group transition-all duration-500
             shadow-[0_15px_30px_-10px_rgba(15,23,42,0.3)] 
             ${isAnalyzing ? 'cursor-not-allowed opacity-90' : 'hover:shadow-[0_20px_40px_-10px_rgba(15,23,42,0.5)] hover:scale-[1.01] active:scale-[0.98]'}
-            mb-8
+            mb-6
         `}
       >
          <div className="absolute inset-0 bg-gradient-to-br from-[#0f172a] via-[#1e293b] to-[#0f172a] transition-all duration-500" />
@@ -320,8 +319,8 @@ const ManualEntry: React.FC<ManualEntryProps> = ({ onSave, user, records = [], s
          )}
       </button>
 
-      {/* --- BRUTAL MONTHLY PERFORMANCE CHART (OPTIMIZED) --- */}
-      <div className="mb-8 animate-fade-in" style={{ animationDelay: '200ms' }}>
+      {/* --- MONTHLY PERFORMANCE CHART --- */}
+      <div className="mb-6 animate-fade-in" style={{ animationDelay: '200ms' }}>
           <div className="relative w-full rounded-[32px] bg-white/60 backdrop-blur-xl border border-white p-1 overflow-hidden shadow-2xl shadow-blue-900/10 group">
               {/* Animated Background Mesh - Toned down opacity */}
               <div className="absolute inset-0 opacity-20 pointer-events-none">
@@ -329,7 +328,7 @@ const ManualEntry: React.FC<ManualEntryProps> = ({ onSave, user, records = [], s
                   <div className="absolute bottom-[-20%] left-[-20%] w-[300px] h-[300px] bg-purple-300 rounded-full blur-[60px] animate-pulse" style={{ animationDelay: '2s' }} />
               </div>
 
-              <div className="bg-white/40 rounded-[28px] p-5 relative z-10">
+              <div className="bg-white/40 rounded-[28px] p-4 relative z-10">
                   {/* Header */}
                   <div className="flex justify-between items-center mb-4">
                       <div className="flex items-center gap-2">
@@ -343,8 +342,8 @@ const ManualEntry: React.FC<ManualEntryProps> = ({ onSave, user, records = [], s
                       </div>
                   </div>
 
-                  <div className="flex items-center justify-between gap-3 mb-6">
-                       {/* The Ring - Smaller on small screens */}
+                  <div className="flex items-center justify-between gap-2 mb-4">
+                       {/* The Ring - Scaled Automatically via REM */}
                        <div className="relative w-24 h-24 flex-shrink-0">
                            {/* SVG Circle */}
                            <svg className="w-full h-full transform -rotate-90 drop-shadow-xl" viewBox="0 0 160 160">
@@ -439,7 +438,7 @@ const ManualEntry: React.FC<ManualEntryProps> = ({ onSave, user, records = [], s
 
       <div className="space-y-2">
         {visibleRecords && visibleRecords.length > 0 ? visibleRecords.map(record => (
-           <div key={record.id} className="bg-white rounded-[20px] p-4 flex items-center gap-3 shadow-lg shadow-blue-900/5 border border-white">
+           <div key={record.id} className="bg-white rounded-[20px] p-3 flex items-center gap-3 shadow-lg shadow-blue-900/5 border border-white">
               <div className={`w-1 h-10 rounded-full ${record.isPositiveBalance !== false ? 'bg-teal-400' : 'bg-rose-400'}`} />
               <div className="flex-1">
                  <div className="font-bold text-gray-900 text-sm">{formatRecordDate(record.date)}</div>
