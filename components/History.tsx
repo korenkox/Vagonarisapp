@@ -1,7 +1,8 @@
 
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
-import { Plus, ArrowLeft, Zap, Crown, UserMinus, Settings, Power, Activity, Lock, Unlock, Users, Share2, Copy, LogIn, CheckCircle } from 'lucide-react';
-import { Group, AttendanceRecord, ShiftConfig, User } from '../types';
+import { createPortal } from 'react-dom';
+import { Plus, ArrowLeft, Zap, Crown, UserMinus, Settings, Power, Activity, Lock, Unlock, Users, Share2, Copy, LogIn, CheckCircle, MoreVertical, X, Trash2, ShieldAlert } from 'lucide-react';
+import { Group, AttendanceRecord, ShiftConfig, User, GroupMember } from '../types';
 import { supabase } from '../supabaseClient';
 
 interface TeamViewProps {
@@ -27,6 +28,9 @@ const TeamView: React.FC<TeamViewProps> = ({ user, records, shiftConfig }) => {
 
   // Invite Modal State
   const [showInviteModal, setShowInviteModal] = useState(false);
+  
+  // Member Management State
+  const [memberToManage, setMemberToManage] = useState<GroupMember | null>(null);
 
   const [currentUserId, setCurrentUserId] = useState<string>('');
 
@@ -385,7 +389,9 @@ const TeamView: React.FC<TeamViewProps> = ({ user, records, shiftConfig }) => {
 
   const handleRemoveMember = async (memberId: string) => {
       if (!selectedGroup) return;
-      if (!confirm('Odstrániť tohto člena zo skupiny?')) return;
+      
+      // Close modal first
+      setMemberToManage(null);
 
       try {
            await supabase
@@ -621,8 +627,8 @@ const TeamView: React.FC<TeamViewProps> = ({ user, records, shiftConfig }) => {
                             className="group relative bg-white/70 backdrop-blur-md rounded-[24px] p-4 flex items-center justify-between border border-white shadow-lg shadow-gray-200/20 hover:shadow-xl transition-all duration-300 animate-slide-up"
                             style={{ animationDelay: `${index * 100}ms` }}
                         >
-                            <div className="flex items-center gap-4 relative z-10">
-                                <div className="relative">
+                            <div className="flex items-center gap-4 relative z-10 flex-1">
+                                <div className="relative flex-shrink-0">
                                     <div className={`
                                         w-12 h-12 rounded-2xl flex items-center justify-center font-bold text-white text-lg shadow-md
                                         ${member.role === 'Admin' ? 'bg-gradient-to-br from-amber-400 to-orange-500' : 'bg-gradient-to-br from-slate-400 to-slate-600'}
@@ -635,10 +641,10 @@ const TeamView: React.FC<TeamViewProps> = ({ user, records, shiftConfig }) => {
                                     `} />
                                 </div>
                                 
-                                <div>
+                                <div className="min-w-0">
                                     <div className="flex items-center gap-1.5">
-                                        <div className="font-bold text-gray-900 text-sm">{member.name}</div>
-                                        {member.role === 'Admin' && <Crown size={12} className="text-amber-500 fill-amber-500" />}
+                                        <div className="font-bold text-gray-900 text-sm truncate">{member.name}</div>
+                                        {member.role === 'Admin' && <Crown size={12} className="text-amber-500 fill-amber-500 flex-shrink-0" />}
                                     </div>
                                     <div className="text-[10px] font-bold text-gray-400 uppercase tracking-wide flex items-center gap-1">
                                         {member.role} 
@@ -648,7 +654,7 @@ const TeamView: React.FC<TeamViewProps> = ({ user, records, shiftConfig }) => {
                                 </div>
                             </div>
                             
-                            <div className="flex items-center gap-4 relative z-10">
+                            <div className="flex items-center gap-3 relative z-10">
                                 <div className="text-right">
                                     <div className="font-bold text-gray-900 text-sm font-mono">{Math.floor(member.workedHours)}h</div>
                                     <div className="text-[10px] font-medium text-gray-400 flex items-center justify-end gap-1">
@@ -659,10 +665,10 @@ const TeamView: React.FC<TeamViewProps> = ({ user, records, shiftConfig }) => {
                                 
                                 {isAdmin && member.id !== currentUserId && (
                                     <button 
-                                        onClick={() => handleRemoveMember(member.id)}
-                                        className="w-8 h-8 flex items-center justify-center rounded-full bg-rose-50 text-rose-400 hover:bg-rose-500 hover:text-white transition-all opacity-0 group-hover:opacity-100 scale-75 group-hover:scale-100"
+                                        onClick={() => setMemberToManage(member)}
+                                        className="w-10 h-10 flex items-center justify-center rounded-full bg-transparent hover:bg-gray-100 text-gray-400 hover:text-gray-700 transition-colors"
                                     >
-                                        <UserMinus size={16} />
+                                        <MoreVertical size={20} />
                                     </button>
                                 )}
                             </div>
@@ -678,6 +684,14 @@ const TeamView: React.FC<TeamViewProps> = ({ user, records, shiftConfig }) => {
                     onClose={() => setShowInviteModal(false)} 
                 />
             )}
+
+            {/* Member Action Sheet (Admin Only) */}
+            <MemberActionSheet 
+                isOpen={!!memberToManage} 
+                member={memberToManage} 
+                onClose={() => setMemberToManage(null)}
+                onRemove={() => memberToManage && handleRemoveMember(memberToManage.id)}
+            />
         </div>
       );
   }
@@ -826,6 +840,58 @@ const InviteModal = ({ code, onClose }: { code: string, onClose: () => void }) =
                 </div>
             </div>
         </div>
+    );
+};
+
+// --- Member Action Sheet (Mobile Friendly) ---
+const MemberActionSheet = ({ isOpen, member, onClose, onRemove }: { isOpen: boolean, member: GroupMember | null, onClose: () => void, onRemove: () => void }) => {
+    if (!isOpen || !member) return null;
+
+    return createPortal(
+        <div className="fixed inset-0 z-[9999] flex items-end justify-center sm:items-center">
+             <div 
+                className="absolute inset-0 bg-gray-900/40 backdrop-blur-sm transition-opacity animate-fade-in"
+                onClick={onClose}
+             />
+             <div className="bg-white w-full max-w-sm rounded-t-[32px] sm:rounded-[32px] p-6 pb-8 z-10 shadow-2xl transform transition-transform animate-slide-up mx-auto mb-0 sm:mb-auto">
+                 <div className="flex justify-center mb-6">
+                     <div className="w-12 h-1.5 bg-gray-200 rounded-full" />
+                 </div>
+
+                 <div className="flex items-center gap-4 mb-8">
+                     <div className="w-16 h-16 rounded-2xl bg-gray-100 flex items-center justify-center font-bold text-gray-500 text-2xl">
+                         {member.initials}
+                     </div>
+                     <div>
+                         <h3 className="text-xl font-bold text-gray-900">{member.name}</h3>
+                         <div className="text-sm text-gray-500">{member.role}</div>
+                     </div>
+                 </div>
+
+                 <div className="space-y-3">
+                    <button 
+                        onClick={onRemove}
+                        className="w-full p-4 flex items-center gap-4 rounded-2xl bg-rose-50 text-rose-600 hover:bg-rose-100 transition-colors group"
+                    >
+                        <div className="w-10 h-10 rounded-full bg-white flex items-center justify-center shadow-sm text-rose-500 group-hover:scale-110 transition-transform">
+                            <Trash2 size={20} />
+                        </div>
+                        <div className="text-left">
+                            <span className="block font-bold">Odstrániť zo skupiny</span>
+                            <span className="text-xs opacity-70">Akcia je nevratná</span>
+                        </div>
+                    </button>
+
+                    <button 
+                        onClick={onClose}
+                        className="w-full py-4 text-gray-500 font-bold hover:text-gray-900 transition-colors"
+                    >
+                        Zrušiť
+                    </button>
+                 </div>
+             </div>
+        </div>,
+        document.body
     );
 };
 
