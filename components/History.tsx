@@ -657,7 +657,7 @@ const TeamView: React.FC<TeamViewProps> = ({ user, records, shiftConfig }) => {
                                 </div>
                             </div>
                             
-                            {/* Right Side: Stats (NH / ODP) */}
+                            {/* Right Side: Stats (NH / ODP / FOND) */}
                             <div className="flex items-center gap-3 relative z-10 pl-2">
                                 {/* Stats Block */}
                                 <div className="flex items-center gap-3 bg-gray-50/80 rounded-lg p-1.5 px-2.5 border border-gray-100">
@@ -669,6 +669,11 @@ const TeamView: React.FC<TeamViewProps> = ({ user, records, shiftConfig }) => {
                                     <div className="flex flex-col items-end">
                                          <span className="text-[8px] font-bold text-blue-500 uppercase tracking-widest">ODP</span>
                                          <span className="text-sm font-black text-gray-900">{Math.floor(member.workedHours)}h</span>
+                                    </div>
+                                    <div className="w-px h-5 bg-gray-200" />
+                                    <div className="flex flex-col items-end">
+                                        <span className="text-[8px] font-bold text-gray-400 uppercase tracking-widest">FOND</span>
+                                        <span className="text-xs font-bold text-gray-500">{member.calendarFund || 0}h</span>
                                     </div>
                                 </div>
                                 
