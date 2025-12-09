@@ -2,9 +2,9 @@
 import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { createPortal } from 'react-dom';
 import { AttendanceRecord, ShiftConfig } from '../types';
-import { Clock, ChevronRight, ChevronLeft, Sun, Moon, Briefcase, Coffee, Sparkles, X, Check, Share2, TrendingUp, TrendingDown, Trash2, CalendarDays, Activity } from 'lucide-react';
+import { Clock, ChevronRight, ChevronLeft, Sun, Moon, Briefcase, Coffee, Sparkles, X, Check, Share2, TrendingUp, TrendingDown, ArrowRight, Activity, Zap, Trash2, CalendarDays } from 'lucide-react';
 
-export interface ManualEntryProps {
+interface ManualEntryProps {
   onSave: (record: AttendanceRecord) => void;
   onDelete: (id: string) => void;
   user: { name?: string };
@@ -77,53 +77,19 @@ const ManualEntry: React.FC<ManualEntryProps> = ({ onSave, onDelete, user, recor
     const totalWorkedHours = totalWorkedMinutes / 60;
     
     // Performance % = (Norm / Worked) * 100
+    // "Why is performance 70% when I have +7h?" -> Fix to reflect positive balance (saved time) as high efficiency (>100%)
     const percentage = totalWorkedHours > 0 ? (totalNormHoursAccumulated / totalWorkedHours) * 100 : 0;
     
     // Balance = Norm - Worked (Inverted Logic as requested: Positive = Saved/Remaining/Under Budget)
     const balance = totalNormHoursAccumulated - totalWorkedHours; 
 
-    // 3. Calculate Calendar Fund (Teoretický fond pre celý mesiac)
-    let calculatedCalendarFund = 0;
-    const year = date.getFullYear();
-    const month = date.getMonth();
-    const daysInMonth = new Date(year, month + 1, 0).getDate();
-
-    for (let d = 1; d <= daysInMonth; d++) {
-        if (shiftConfig.isActive && shiftConfig.cycle && shiftConfig.cycle.length > 0) {
-            const checkDate = new Date(year, month, d);
-            const startDateObj = new Date(shiftConfig.startDate);
-            checkDate.setHours(0,0,0,0);
-            startDateObj.setHours(0,0,0,0);
-            
-            const diffTime = checkDate.getTime() - startDateObj.getTime();
-            const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24));
-            
-            const cycleLength = shiftConfig.cycle.length;
-            let position = diffDays % cycleLength;
-            if (position < 0) position += cycleLength;
-            
-            const code = shiftConfig.cycle[position];
-            if (code !== 'V') {
-                calculatedCalendarFund += (shiftConfig.shiftLength || 8);
-            }
-        } else {
-             // Default: Po-Pia 8 hodín
-             const currentDayDate = new Date(year, month, d);
-             const dayOfWeek = currentDayDate.getDay();
-             if (dayOfWeek !== 0 && dayOfWeek !== 6) {
-                 calculatedCalendarFund += 8;
-             }
-        }
-    }
-
     return {
         worked: totalWorkedHours,
-        target: totalNormHoursAccumulated, // Sum of norms from records
-        calendarFund: calculatedCalendarFund, // Theoretical monthly fund
+        target: totalNormHoursAccumulated,
         percentage: Math.round(percentage),
         balance: balance
     };
-  }, [currentMonthRecords, date, shiftConfig]);
+  }, [currentMonthRecords]);
 
   const handleAnalyze = () => {
     setIsAnalyzing(true);
@@ -243,7 +209,7 @@ const ManualEntry: React.FC<ManualEntryProps> = ({ onSave, onDelete, user, recor
       >
          <div className="flex items-center gap-4">
             <div className="w-10 h-10 bg-blue-50 text-blue-600 rounded-xl flex items-center justify-center group-hover:bg-blue-100 transition-colors">
-               <CalendarDays size={20} />
+               <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect width="18" height="18" x="3" y="4" rx="2" ry="2"/><line x1="16" x2="16" y1="2" y2="6"/><line x1="8" x2="8" y1="2" y2="6"/><line x1="3" x2="21" y1="10" y2="10"/></svg>
             </div>
             <div className="text-left">
                <div className="text-[9px] font-bold text-gray-400 uppercase tracking-widest mb-0.5">Dnešný dátum</div>
@@ -423,44 +389,46 @@ const ManualEntry: React.FC<ManualEntryProps> = ({ onSave, onDelete, user, recor
                            </div>
                        </div>
 
-                       {/* Stats Column - Cleaned up to show just the big worked number for clarity */}
-                       <div className="flex flex-col justify-center flex-1 min-w-0 pl-2">
-                           <div className="text-[9px] font-bold text-gray-400 uppercase tracking-widest mb-1">Celkovo odpracované</div>
-                           <div className="text-3xl font-black text-gray-800 flex items-baseline gap-1">
-                               {monthlyStats.worked.toFixed(1)}
-                               <span className="text-sm text-gray-400 font-bold">hod</span>
+                       {/* Stats Column - Cleaned up */}
+                       <div className="flex flex-col gap-2 flex-1 min-w-0">
+                           <div className="group/stat relative overflow-hidden bg-white/50 hover:bg-white rounded-2xl p-2.5 border border-white/50 transition-all duration-300">
+                               <div className="relative z-10">
+                                   <div className="text-[8px] font-bold text-gray-400 uppercase tracking-widest mb-0.5">Odpracované</div>
+                                   <div className="text-xl font-black text-gray-800 flex items-baseline gap-1">
+                                       {monthlyStats.worked.toFixed(1)}
+                                       <span className="text-[10px] text-gray-400 font-bold">h</span>
+                                   </div>
+                               </div>
                            </div>
-                           <div className={`mt-2 inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-bold w-fit ${monthlyStats.balance >= 0 ? 'bg-teal-50 text-teal-600' : 'bg-rose-50 text-rose-600'}`}>
-                                {monthlyStats.balance >= 0 ? <TrendingUp size={12} /> : <TrendingDown size={12} />}
-                                {monthlyStats.balance > 0 ? '+' : ''}{monthlyStats.balance.toFixed(1)}h bilancia
+                           
+                           <div className="group/stat relative overflow-hidden bg-white/30 hover:bg-white rounded-2xl p-2.5 border border-white/30 transition-all duration-300">
+                               <div className="relative z-10">
+                                   <div className="text-[8px] font-bold text-gray-400 uppercase tracking-widest mb-0.5">Súčet Noriem</div>
+                                   <div className="text-xl font-black text-gray-400 flex items-baseline gap-1">
+                                       {monthlyStats.target}
+                                       <span className="text-[10px] text-gray-300 font-bold">h</span>
+                                   </div>
+                               </div>
                            </div>
                        </div>
                   </div>
 
-                  {/* 3-Part Ratio Pill (Requested Feature) */}
-                  <div className="mt-2 p-1 bg-white/50 rounded-[18px] border border-white">
-                      <div className="bg-white rounded-[14px] py-3 px-4 shadow-sm flex items-center justify-between divide-x divide-gray-100">
-                           
-                           {/* Norma */}
-                           <div className="flex flex-col items-center flex-1 px-1">
-                               <div className="text-[8px] font-bold text-gray-400 uppercase tracking-widest mb-0.5">Norma</div>
-                               <div className="text-sm font-black text-gray-500">{monthlyStats.target}</div>
-                           </div>
-
-                           {/* Odpracované (Highlighted) */}
-                           <div className="flex flex-col items-center flex-1 px-1">
-                               <div className="text-[8px] font-bold text-blue-500 uppercase tracking-widest mb-0.5">Odprac.</div>
-                               <div className="text-lg font-black text-blue-600">{monthlyStats.worked.toFixed(0)}</div>
-                           </div>
-
-                           {/* Fond */}
-                           <div className="flex flex-col items-center flex-1 px-1">
-                               <div className="text-[8px] font-bold text-gray-400 uppercase tracking-widest mb-0.5">Fond</div>
-                               <div className="text-sm font-black text-gray-500">{monthlyStats.calendarFund}</div>
-                           </div>
+                  {/* Balance Indicator */}
+                  <div className="p-1 bg-white/50 rounded-[18px] border border-white">
+                      <div className="bg-white rounded-[14px] p-3 flex items-center justify-between shadow-sm">
+                          <div className="flex items-center gap-3">
+                              <div className={`p-2 rounded-xl ${monthlyStats.balance >= 0 ? 'bg-teal-50 text-teal-500' : 'bg-rose-50 text-rose-500'}`}>
+                                  {monthlyStats.balance >= 0 ? <Zap size={16} fill="currentColor" /> : <TrendingDown size={16} />}
+                              </div>
+                              <div>
+                                  <div className="text-[8px] font-bold text-gray-400 uppercase tracking-widest">Bilancia</div>
+                                  <div className={`text-base font-black ${monthlyStats.balance >= 0 ? 'text-teal-500' : 'text-rose-500'}`}>
+                                      {monthlyStats.balance > 0 ? '+' : ''}{monthlyStats.balance.toFixed(1)}h
+                                  </div>
+                              </div>
+                          </div>
                       </div>
                   </div>
-
               </div>
           </div>
       </div>
@@ -780,6 +748,8 @@ const DatePickerSheet = ({ isOpen, onClose, selectedDate, onSelect }: any) => {
    const month = viewDate.getMonth();
    const daysInMonth = new Date(year, month + 1, 0).getDate();
    const firstDayOfMonth = new Date(year, month, 1).getDay();
+   // 0=Sun, 1=Mon... We want 0=Mon, 6=Sun. 
+   // If firstDay is 0(Sun) -> 6. If 1(Mon) -> 0.
    const startDay = firstDayOfMonth === 0 ? 6 : firstDayOfMonth - 1;
 
    const MONTH_NAMES = ["Január", "Február", "Marec", "Apríl", "Máj", "Jún", "Júl", "August", "September", "Október", "November", "December"];
@@ -861,6 +831,7 @@ const DatePickerSheet = ({ isOpen, onClose, selectedDate, onSelect }: any) => {
              <div className="h-6" /> {/* Spacer */}
          </div>
          
+         {/* Reuse Styles for animation */}
          <style>{`
             .animate-slide-up {
                animation: slideUp 0.3s cubic-bezier(0.16, 1, 0.3, 1);
