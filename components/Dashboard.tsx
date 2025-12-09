@@ -12,6 +12,7 @@ interface DashboardProps {
   onLogout: () => void;
   records: AttendanceRecord[];
   onAddRecord: (record: AttendanceRecord) => void;
+  onDeleteRecord: (id: string) => void;
   shiftConfig: ShiftConfig;
   onUpdateShiftConfig: (config: ShiftConfig) => void;
 }
@@ -21,6 +22,7 @@ const Dashboard: React.FC<DashboardProps> = ({
   onLogout, 
   records, 
   onAddRecord,
+  onDeleteRecord,
   shiftConfig,
   onUpdateShiftConfig
 }) => {
@@ -29,7 +31,7 @@ const Dashboard: React.FC<DashboardProps> = ({
   const renderContent = () => {
     switch (activeTab) {
       case 'HOME':
-        return <ManualEntry onSave={onAddRecord} user={user} records={records} shiftConfig={shiftConfig} />;
+        return <ManualEntry onSave={onAddRecord} onDelete={onDeleteRecord} user={user} records={records} shiftConfig={shiftConfig} />;
       case 'CALENDAR':
         return <MonthOverview config={shiftConfig} onUpdateConfig={onUpdateShiftConfig} records={records} />;
       case 'TEAM':
