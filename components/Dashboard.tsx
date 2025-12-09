@@ -146,7 +146,15 @@ const Dashboard: React.FC<DashboardProps> = ({
   );
 };
 
-const NavButton = ({ isActive, onClick, icon, label, activeColor }: any) => (
+interface NavButtonProps {
+    isActive: boolean;
+    onClick: () => void;
+    icon: React.ReactNode;
+    label: string;
+    activeColor: string;
+}
+
+const NavButton = ({ isActive, onClick, icon, label, activeColor }: NavButtonProps) => (
   <button 
     onClick={onClick}
     className={`relative flex flex-col items-center justify-center w-14 md:w-16 transition-all duration-300 ${isActive ? '-translate-y-1 opacity-100' : 'opacity-50 hover:opacity-100'}`}
