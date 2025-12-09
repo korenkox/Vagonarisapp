@@ -104,7 +104,9 @@ const TeamView: React.FC<TeamViewProps> = ({ user, records, shiftConfig }) => {
 
   // --- 2. Fetch Groups from Supabase ---
   const fetchGroups = useCallback(async () => {
-      setLoading(true);
+      // Don't set loading true on initial fetch if we want silent updates
+      if (groups.length === 0) setLoading(true);
+      
       try {
           const { data: groupsData, error: groupsError } = await supabase
             .from('groups')
@@ -161,7 +163,7 @@ const TeamView: React.FC<TeamViewProps> = ({ user, records, shiftConfig }) => {
       } finally {
           setLoading(false);
       }
-  }, [selectedGroup]);
+  }, [selectedGroup, groups.length]);
 
   useEffect(() => {
       fetchGroups();
@@ -193,6 +195,45 @@ const TeamView: React.FC<TeamViewProps> = ({ user, records, shiftConfig }) => {
 
       return () => clearTimeout(timer);
   }, [myStats, currentUserId, user.name]);
+
+  // --- 4. OPTIMISTIC UPDATE: Update local state immediately when my config changes ---
+  useEffect(() => {
+    if (!currentUserId) return;
+
+    // Function to calculate updated group with MY new stats
+    const updateGroupData = (g: Group): Group => {
+        const memberIndex = g.members.findIndex(m => m.id === currentUserId);
+        if (memberIndex === -1) return g;
+
+        // Clone and update my specific member record
+        const updatedMembers = [...g.members];
+        updatedMembers[memberIndex] = {
+            ...updatedMembers[memberIndex],
+            workedHours: myStats.worked,
+            normHours: myStats.norm,
+            calendarFund: myStats.calendarFund
+        };
+
+        // Recalculate group totals based on new member data
+        const totalW = updatedMembers.reduce((sum, m) => sum + m.workedHours, 0);
+        const totalN = updatedMembers.reduce((sum, m) => sum + m.normHours, 0);
+        const totalCF = updatedMembers.reduce((sum, m) => sum + (m.calendarFund || 0), 0);
+
+        return {
+            ...g,
+            members: updatedMembers,
+            totalWorked: parseFloat(totalW.toFixed(1)),
+            totalNorm: totalN,
+            totalCalendarFund: totalCF,
+            efficiency: totalW > 0 ? Math.round((totalN / totalW) * 100) : 0
+        };
+    };
+
+    // Apply updates to list and detailed view
+    setGroups(prev => prev.map(updateGroupData));
+    setSelectedGroup(prev => prev ? updateGroupData(prev) : null);
+
+  }, [myStats, currentUserId]); // Trigger whenever my local calculations change
 
   const generateInviteCode = () => {
       const chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
