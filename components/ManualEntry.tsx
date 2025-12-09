@@ -1,16 +1,18 @@
+
 import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { createPortal } from 'react-dom';
 import { AttendanceRecord, ShiftConfig } from '../types';
-import { Clock, ChevronRight, ChevronLeft, Sun, Moon, Briefcase, Coffee, Sparkles, X, Check, Share2, TrendingUp, TrendingDown, ArrowRight, Activity, Zap } from 'lucide-react';
+import { Clock, ChevronRight, ChevronLeft, Sun, Moon, Briefcase, Coffee, Sparkles, X, Check, Share2, TrendingUp, TrendingDown, ArrowRight, Activity, Zap, Trash2, CalendarDays } from 'lucide-react';
 
 interface ManualEntryProps {
   onSave: (record: AttendanceRecord) => void;
+  onDelete: (id: string) => void;
   user: { name?: string };
   records: AttendanceRecord[];
   shiftConfig: ShiftConfig;
 }
 
-const ManualEntry: React.FC<ManualEntryProps> = ({ onSave, user, records = [], shiftConfig }) => {
+const ManualEntry: React.FC<ManualEntryProps> = ({ onSave, onDelete, user, records = [], shiftConfig }) => {
   const [date, setDate] = useState(new Date());
   const [isDatePickerOpen, setIsDatePickerOpen] = useState(false);
   const [isAnalyzing, setIsAnalyzing] = useState(false);
@@ -30,6 +32,9 @@ const ManualEntry: React.FC<ManualEntryProps> = ({ onSave, user, records = [], s
   // State for Summary View
   const [showSummary, setShowSummary] = useState(false);
   const [summaryData, setSummaryData] = useState<any>(null);
+
+  // State for managing record details/deletion
+  const [selectedRecord, setSelectedRecord] = useState<AttendanceRecord | null>(null);
 
   const formattedDate = date.toLocaleDateString('sk-SK', { day: 'numeric', month: 'long', year: 'numeric' });
 
@@ -155,6 +160,11 @@ const ManualEntry: React.FC<ManualEntryProps> = ({ onSave, user, records = [], s
     
     // Reset view
     setShowSummary(false);
+  };
+
+  const handleDeleteRecord = (id: string) => {
+      onDelete(id);
+      setSelectedRecord(null);
   };
 
   // Helper to format date for list
@@ -423,7 +433,7 @@ const ManualEntry: React.FC<ManualEntryProps> = ({ onSave, user, records = [], s
           </div>
       </div>
 
-      {/* Recent Records */}
+      {/* Recent Records - Now Interactive */}
       <div className="flex justify-between items-end mb-3">
          <h3 className="text-base font-bold text-gray-800">Posledné záznamy</h3>
          {currentMonthRecords.length > 2 && (
@@ -438,7 +448,11 @@ const ManualEntry: React.FC<ManualEntryProps> = ({ onSave, user, records = [], s
 
       <div className="space-y-2">
         {visibleRecords && visibleRecords.length > 0 ? visibleRecords.map(record => (
-           <div key={record.id} className="bg-white rounded-[20px] p-3 flex items-center gap-3 shadow-lg shadow-blue-900/5 border border-white">
+           <button 
+              key={record.id} 
+              onClick={() => setSelectedRecord(record)}
+              className="w-full bg-white rounded-[20px] p-3 flex items-center gap-3 shadow-lg shadow-blue-900/5 border border-white hover:scale-[1.02] active:scale-95 transition-all text-left"
+           >
               <div className={`w-1 h-10 rounded-full ${record.isPositiveBalance !== false ? 'bg-teal-400' : 'bg-rose-400'}`} />
               <div className="flex-1">
                  <div className="font-bold text-gray-900 text-sm">{formatRecordDate(record.date)}</div>
@@ -449,7 +463,7 @@ const ManualEntry: React.FC<ManualEntryProps> = ({ onSave, user, records = [], s
                    {record.balance}
                 </div>
               )}
-           </div>
+           </button>
         )) : (
           <div className="bg-white rounded-[20px] p-4 flex items-center justify-center text-gray-400 text-sm shadow-sm">
              Žiadne záznamy pre tento mesiac
@@ -491,6 +505,14 @@ const ManualEntry: React.FC<ManualEntryProps> = ({ onSave, user, records = [], s
           />
       )}
 
+      {/* Record Action Sheet (Delete) */}
+      <RecordActionSheet 
+         isOpen={!!selectedRecord}
+         record={selectedRecord}
+         onClose={() => setSelectedRecord(null)}
+         onDelete={() => selectedRecord && handleDeleteRecord(selectedRecord.id)}
+      />
+
       <style>{`
         @keyframes shimmer {
             0% { transform: translateX(-100%); }
@@ -502,6 +524,76 @@ const ManualEntry: React.FC<ManualEntryProps> = ({ onSave, user, records = [], s
       `}</style>
     </div>
   );
+};
+
+// --- Record Action Sheet (New) ---
+const RecordActionSheet = ({ isOpen, record, onClose, onDelete }: any) => {
+    if (!isOpen || !record) return null;
+
+    return createPortal(
+        <div className="fixed inset-0 z-[1000] flex items-end justify-center sm:items-center">
+             <div 
+                className="absolute inset-0 bg-gray-900/40 backdrop-blur-sm transition-opacity animate-fade-in"
+                onClick={onClose}
+             />
+             <div className="bg-white w-full max-w-sm rounded-t-[32px] sm:rounded-[32px] p-6 pb-8 z-10 shadow-2xl transform transition-transform animate-slide-up mx-auto mb-0 sm:mb-auto">
+                 <div className="flex justify-center mb-6">
+                     <div className="w-12 h-1.5 bg-gray-200 rounded-full" />
+                 </div>
+
+                 <div className="flex items-center gap-4 mb-8">
+                     <div className="w-16 h-16 rounded-2xl bg-blue-50 flex items-center justify-center font-bold text-blue-500 text-2xl">
+                         <CalendarDays size={28} />
+                     </div>
+                     <div>
+                         <h3 className="text-lg font-bold text-gray-900">
+                             {new Date(record.date).toLocaleDateString('sk-SK', { day: 'numeric', month: 'long', year: 'numeric' })}
+                         </h3>
+                         <div className="text-sm text-gray-500">Detail záznamu</div>
+                     </div>
+                 </div>
+
+                 {/* Detail Stats */}
+                 <div className="bg-gray-50 rounded-2xl p-4 mb-6 grid grid-cols-2 gap-4">
+                     <div>
+                         <div className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1">Príchod</div>
+                         <div className="text-lg font-bold text-gray-800">{record.arrivalTime}</div>
+                     </div>
+                     <div>
+                         <div className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1">Odchod</div>
+                         <div className="text-lg font-bold text-gray-800">{record.departureTime}</div>
+                     </div>
+                     <div className="col-span-2 pt-2 border-t border-gray-200 flex justify-between items-center">
+                         <span className="text-xs font-bold text-gray-500">Odpracované</span>
+                         <span className="text-xl font-black text-blue-600">{record.totalWorked}</span>
+                     </div>
+                 </div>
+
+                 <div className="space-y-3">
+                    <button 
+                        onClick={onDelete}
+                        className="w-full p-4 flex items-center gap-4 rounded-2xl bg-rose-50 text-rose-600 hover:bg-rose-100 transition-colors group"
+                    >
+                        <div className="w-10 h-10 rounded-full bg-white flex items-center justify-center shadow-sm text-rose-500 group-hover:scale-110 transition-transform">
+                            <Trash2 size={20} />
+                        </div>
+                        <div className="text-left">
+                            <span className="block font-bold">Zmazať záznam</span>
+                            <span className="text-xs opacity-70">Akcia je nevratná</span>
+                        </div>
+                    </button>
+
+                    <button 
+                        onClick={onClose}
+                        className="w-full py-4 text-gray-500 font-bold hover:text-gray-900 transition-colors"
+                    >
+                        Zavrieť
+                    </button>
+                 </div>
+             </div>
+        </div>,
+        document.body
+    );
 };
 
 // --- Custom Mobile-First Time Picker Sheet ---
