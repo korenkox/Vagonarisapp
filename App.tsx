@@ -1,5 +1,5 @@
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { AppView, User, AttendanceRecord, ShiftConfig } from './types';
 import Auth from './components/Auth';
 import Dashboard from './components/Dashboard';
@@ -7,8 +7,12 @@ import WelcomeScreen from './components/WelcomeScreen';
 import { supabase } from './supabaseClient';
 
 const App: React.FC = () => {
+  // Default view is INTRO, auth listener will switch to DASHBOARD if logged in
   const [currentView, setCurrentView] = useState<AppView>(AppView.INTRO);
+  
+  // User state starts null
   const [user, setUser] = useState<User | null>(null);
+
   const [authMode, setAuthMode] = useState<'login' | 'register'>('login');
   
   // Data State
@@ -38,6 +42,42 @@ const App: React.FC = () => {
       }
     };
   });
+
+  // --- 2. DATA FETCHING (Supabase) ---
+  // Defined BEFORE useEffect to avoid reference errors
+  const fetchRecords = useCallback(async (userId: string) => {
+      try {
+          const { data, error } = await supabase
+            .from('attendance_records')
+            .select('*')
+            .eq('user_id', userId)
+            .order('date', { ascending: false });
+          
+          if (error) throw error;
+          
+          if (data) {
+              // Map database fields to app type if snake_case -> camelCase differs
+              const mappedRecords: AttendanceRecord[] = data.map(r => ({
+                  id: r.id,
+                  date: r.date,
+                  arrivalTime: r.arrival_time,
+                  departureTime: r.departure_time,
+                  breakDuration: r.break_duration,
+                  normHours: r.norm_hours,
+                  totalWorked: r.total_worked,
+                  balance: r.balance,
+                  isPositiveBalance: r.is_positive_balance
+              }));
+              setRecords(mappedRecords);
+          }
+      } catch (err: any) {
+          // Log detailed error message
+          console.error('Error fetching records details:', err.message || err);
+          if (err.code === '42P01') {
+             console.warn('Tabuľka "attendance_records" pravdepodobne neexistuje v databáze.');
+          }
+      }
+  }, []);
 
   // --- 1. SESSION MANAGEMENT ---
   useEffect(() => {
@@ -72,38 +112,7 @@ const App: React.FC = () => {
     });
 
     return () => subscription.unsubscribe();
-  }, []);
-
-  // --- 2. DATA FETCHING (Supabase) ---
-  const fetchRecords = async (userId: string) => {
-      try {
-          const { data, error } = await supabase
-            .from('attendance_records')
-            .select('*')
-            .eq('user_id', userId)
-            .order('date', { ascending: false });
-          
-          if (error) throw error;
-          
-          if (data) {
-              // Map database fields to app type if snake_case -> camelCase differs
-              const mappedRecords: AttendanceRecord[] = data.map(r => ({
-                  id: r.id,
-                  date: r.date,
-                  arrivalTime: r.arrival_time,
-                  departureTime: r.departure_time,
-                  breakDuration: r.break_duration,
-                  normHours: r.norm_hours,
-                  totalWorked: r.total_worked,
-                  balance: r.balance,
-                  isPositiveBalance: r.is_positive_balance
-              }));
-              setRecords(mappedRecords);
-          }
-      } catch (err) {
-          console.error('Error fetching records:', err);
-      }
-  };
+  }, [fetchRecords]);
 
   const handleNavigateToAuth = (mode: 'login' | 'register') => {
       setAuthMode(mode);
@@ -112,7 +121,6 @@ const App: React.FC = () => {
 
   const handleLogout = async () => {
     await supabase.auth.signOut();
-    // State update is handled by onAuthStateChange listener
   };
 
   // --- 3. DATA SAVING & DELETING (Supabase) ---
@@ -140,12 +148,11 @@ const App: React.FC = () => {
             });
 
           if (error) {
-              console.error('Error saving record:', error);
-              alert(`Chyba pri ukladaní: ${error.message}`);
+              console.error('Error saving record:', error.message);
+              // alert(`Chyba pri ukladaní: ${error.message}`);
           }
       } catch (err: any) {
           console.error('Async error:', err);
-          alert(`Neočakávaná chyba: ${err.message}`);
       }
   };
 
@@ -164,8 +171,8 @@ const App: React.FC = () => {
         if (error) throw error;
         
     } catch (err: any) {
-        console.error('Error deleting record:', err);
-        alert('Nepodarilo sa vymazať záznam.');
+        console.error('Error deleting record:', err.message || err);
+        alert('Nepodarilo sa vymazať záznam. Skontrolujte pripojenie.');
         // Revert on error
         setRecords(previousRecords);
     }
