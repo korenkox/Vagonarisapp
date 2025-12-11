@@ -365,18 +365,24 @@ const TeamView: React.FC<TeamViewProps> = ({ user, records, shiftConfig }) => {
 
   const handleRemoveMember = async (memberId: string) => {
       if (!selectedGroup) return;
-      setMemberToManage(null);
 
       try {
-           await supabase
-            .from('group_members')
-            .delete()
-            .eq('group_id', selectedGroup.id)
-            .eq('user_id', memberId);
+           // POUŽITIE RPC (Remote Procedure Call) na bezpečné odstránenie
+           // Toto obíde štandardné RLS obmedzenia pre DELETE, pretože funkcia na serveri
+           // má nastavené SECURITY DEFINER a kontroluje oprávnenia explicitne.
+           const { error } = await supabase.rpc('delete_group_member', {
+               target_user_id: memberId,
+               target_group_id: selectedGroup.id
+           });
+
+           if (error) throw error;
            
+           // Úspech
+           setMemberToManage(null);
            fetchGroups();
-      } catch (err) {
-          console.error(err);
+      } catch (err: any) {
+          console.error('Error removing member:', err);
+          alert('Chyba pri odstraňovaní člena: ' + (err.message || 'Uistite sa, že ste v Supabase vytvorili SQL funkciu delete_group_member.'));
       }
   };
 
