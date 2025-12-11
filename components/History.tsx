@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect, useMemo, useCallback, useRef } from 'react';
 import { createPortal } from 'react-dom';
-import { Plus, ArrowLeft, Zap, Crown, UserMinus, Settings, Power, Activity, Lock, Unlock, Users, Share2, Copy, LogIn, CheckCircle, MoreVertical, X, Trash2, ShieldAlert, Briefcase, Clock, Calendar } from 'lucide-react';
+import { Plus, ArrowLeft, Zap, Crown, UserMinus, Settings, Power, Activity, Lock, Unlock, Users, Share2, Copy, LogIn, CheckCircle, MoreVertical, X, Trash2, ShieldAlert, Briefcase, Clock, Calendar, ChevronRight, TrendingUp, TrendingDown } from 'lucide-react';
 import { Group, AttendanceRecord, ShiftConfig, User, GroupMember } from '../types';
 import { supabase } from '../supabaseClient';
 
@@ -33,8 +33,11 @@ const TeamView: React.FC<TeamViewProps> = ({ user, records, shiftConfig }) => {
   // Invite Modal State
   const [showInviteModal, setShowInviteModal] = useState(false);
   
-  // Member Management State
+  // Member Management State (Admin Delete)
   const [memberToManage, setMemberToManage] = useState<GroupMember | null>(null);
+  
+  // Member Detail View State (Performance Stats)
+  const [viewMember, setViewMember] = useState<GroupMember | null>(null);
 
   const [currentUserId, setCurrentUserId] = useState<string>('');
 
@@ -492,7 +495,6 @@ const TeamView: React.FC<TeamViewProps> = ({ user, records, shiftConfig }) => {
       const isHighEnergy = selectedGroup.efficiency >= 100;
       
       // Calculate Balance (Positive = Time Saved = Norm > Worked)
-      // Example: Norm 20h, Worked 15h. Balance = +5h. Efficiency > 100%.
       const balance = selectedGroup.totalNorm - selectedGroup.totalWorked;
       const isPositiveBalance = balance >= 0;
 
@@ -543,7 +545,7 @@ const TeamView: React.FC<TeamViewProps> = ({ user, records, shiftConfig }) => {
                 </div>
             </div>
 
-            {/* Energy Core Visualization (UPDATED) */}
+            {/* Energy Core Visualization */}
             <div className="relative w-full flex flex-col items-center justify-center mb-10 py-4">
                 <div className="relative w-[280px] h-[280px] flex items-center justify-center">
                     <div className={`absolute inset-0 rounded-full blur-[60px] animate-pulse-slow transition-colors duration-1000 ${theme.glow}`} />
@@ -616,7 +618,7 @@ const TeamView: React.FC<TeamViewProps> = ({ user, records, shiftConfig }) => {
                 <h3 className="text-xs font-bold text-gray-400 uppercase tracking-widest">Členovia tímu ({selectedGroup.members.length})</h3>
             </div>
 
-            {/* Members List - Updated Design */}
+            {/* Members List - Updated to Clickable Rows */}
             <div className="space-y-3">
                 {selectedGroup.members.map((member, index) => {
                     const eff = member.workedHours > 0 
@@ -624,12 +626,13 @@ const TeamView: React.FC<TeamViewProps> = ({ user, records, shiftConfig }) => {
                         : 0;
 
                     return (
-                        <div 
+                        <button
                             key={member.id} 
-                            className="group relative bg-white rounded-[20px] p-3 pl-4 flex items-center justify-between border border-gray-100 shadow-lg shadow-gray-200/50 hover:shadow-xl hover:scale-[1.01] transition-all duration-300 animate-slide-up"
+                            onClick={() => setViewMember(member)}
+                            className="w-full group relative bg-white rounded-[20px] p-3 pl-4 flex items-center justify-between border border-gray-100 shadow-lg shadow-gray-200/50 hover:shadow-xl hover:scale-[1.01] transition-all duration-300 animate-slide-up"
                             style={{ animationDelay: `${index * 100}ms` }}
                         >
-                            {/* Left Side */}
+                            {/* Left Side: Avatar + Info */}
                             <div className="flex items-center gap-3 relative z-10 flex-1 min-w-0">
                                 <div className="relative flex-shrink-0">
                                     <div className={`
@@ -644,7 +647,7 @@ const TeamView: React.FC<TeamViewProps> = ({ user, records, shiftConfig }) => {
                                     `} />
                                 </div>
                                 
-                                <div className="min-w-0">
+                                <div className="min-w-0 text-left">
                                     <div className="flex items-center gap-1.5">
                                         <div className="font-bold text-gray-900 text-sm truncate">{member.name}</div>
                                         {member.role === 'Admin' && <Crown size={10} className="text-amber-500 fill-amber-500 flex-shrink-0" />}
@@ -657,37 +660,26 @@ const TeamView: React.FC<TeamViewProps> = ({ user, records, shiftConfig }) => {
                                 </div>
                             </div>
                             
-                            {/* Right Side: Stats (NH / ODP / FOND) */}
-                            <div className="flex items-center gap-3 relative z-10 pl-2">
-                                {/* Stats Block */}
-                                <div className="flex items-center gap-3 bg-gray-50/80 rounded-lg p-1.5 px-2.5 border border-gray-100">
-                                    <div className="flex flex-col items-end">
-                                        <span className="text-[8px] font-bold text-gray-400 uppercase tracking-widest">NH</span>
-                                        <span className="text-xs font-bold text-gray-500">{member.normHours}h</span>
-                                    </div>
-                                    <div className="w-px h-5 bg-gray-200" />
-                                    <div className="flex flex-col items-end">
-                                         <span className="text-[8px] font-bold text-blue-500 uppercase tracking-widest">ODP</span>
-                                         <span className="text-sm font-black text-gray-900">{Math.floor(member.workedHours)}h</span>
-                                    </div>
-                                    <div className="w-px h-5 bg-gray-200" />
-                                    <div className="flex flex-col items-end">
-                                        <span className="text-[8px] font-bold text-gray-400 uppercase tracking-widest">FOND</span>
-                                        <span className="text-xs font-bold text-gray-500">{member.calendarFund || 0}h</span>
-                                    </div>
-                                </div>
-                                
-                                {/* Admin Actions */}
+                            {/* Right Side: Arrow & Admin Action */}
+                            <div className="flex items-center gap-1 relative z-10 pl-2">
+                                {/* Admin Actions - Stop propagation so it doesn't open details */}
                                 {isAdmin && member.id !== currentUserId && (
-                                    <button 
-                                        onClick={() => setMemberToManage(member)}
-                                        className="w-8 h-8 flex items-center justify-center rounded-full bg-transparent hover:bg-gray-100 text-gray-400 hover:text-gray-700 transition-colors"
+                                    <div 
+                                        onClick={(e) => {
+                                            e.stopPropagation();
+                                            setMemberToManage(member);
+                                        }}
+                                        className="w-8 h-8 flex items-center justify-center rounded-full bg-transparent hover:bg-gray-100 text-gray-300 hover:text-gray-700 transition-colors"
                                     >
                                         <MoreVertical size={16} />
-                                    </button>
+                                    </div>
                                 )}
+                                
+                                <div className="text-gray-300 group-hover:text-blue-500 transition-colors">
+                                    <ChevronRight size={20} />
+                                </div>
                             </div>
-                        </div>
+                        </button>
                     );
                 })}
             </div>
@@ -700,12 +692,19 @@ const TeamView: React.FC<TeamViewProps> = ({ user, records, shiftConfig }) => {
                 />
             )}
 
-            {/* Member Action Sheet (Admin Only) */}
+            {/* Member Action Sheet (Admin Delete) */}
             <MemberActionSheet 
                 isOpen={!!memberToManage} 
                 member={memberToManage} 
                 onClose={() => setMemberToManage(null)}
                 onRemove={() => memberToManage && handleRemoveMember(memberToManage.id)}
+            />
+
+            {/* Member Detail View (Performance Stats Modal) */}
+            <MemberDetailModal 
+                isOpen={!!viewMember}
+                member={viewMember}
+                onClose={() => setViewMember(null)}
             />
         </div>
       );
@@ -812,6 +811,152 @@ const TeamView: React.FC<TeamViewProps> = ({ user, records, shiftConfig }) => {
       )}
     </div>
   );
+};
+
+// --- Member Detail Modal (Mesačný Výkon Style) ---
+const MemberDetailModal = ({ isOpen, member, onClose }: { isOpen: boolean, member: GroupMember | null, onClose: () => void }) => {
+    if (!isOpen || !member) return null;
+
+    // Calculate Stats
+    const efficiency = member.workedHours > 0 
+        ? Math.round((member.normHours / member.workedHours) * 100) 
+        : 0;
+    
+    // Balance (Norm > Worked = Positive/Saved in this app context based on prev logic, 
+    // BUT usually Balance = Worked - Norm. 
+    // Let's stick to the visual logic: If I worked 20h and Norm was 20h -> 100%.
+    // If I worked 16h and Norm was 20h -> 125% efficiency (Saved time) -> Positive Balance +4h.
+    // If I worked 24h and Norm was 20h -> 83% efficiency (Overtime/Slower) -> Negative Balance -4h.
+    // Wait, let's look at ManualEntry logic again. 
+    // "Performance % = (Norm / Worked) * 100".
+    // "Balance = Norm - Worked".
+    // So if Norm 20, Worked 16 -> Balance +4.
+    const balanceVal = member.normHours - member.workedHours;
+    const isPositive = balanceVal >= 0;
+    const balanceFormatted = `${isPositive ? '+' : ''}${balanceVal.toFixed(1)}h`;
+
+    return createPortal(
+        <div className="fixed inset-0 z-[1000] flex items-end justify-center sm:items-center">
+             <div 
+                className="absolute inset-0 bg-gray-900/40 backdrop-blur-sm transition-opacity animate-fade-in"
+                onClick={onClose}
+             />
+             <div className="bg-white w-full max-w-sm rounded-t-[32px] sm:rounded-[32px] p-6 pb-8 z-10 shadow-2xl transform transition-transform animate-slide-up mx-auto mb-0 sm:mb-auto overflow-hidden relative">
+                 
+                 {/* Decorative background */}
+                 <div className="absolute top-[-20%] right-[-20%] w-[200px] h-[200px] bg-blue-100 rounded-full blur-[60px] pointer-events-none opacity-50" />
+                 
+                 <div className="flex justify-between items-center mb-6 relative z-10">
+                     <div className="flex items-center gap-3">
+                         <div className={`w-12 h-12 rounded-2xl flex items-center justify-center font-bold text-white text-lg shadow-md ${member.role === 'Admin' ? 'bg-gradient-to-br from-amber-400 to-orange-500' : 'bg-gradient-to-br from-slate-400 to-slate-600'}`}>
+                             {member.initials}
+                         </div>
+                         <div>
+                             <h3 className="text-xl font-bold text-gray-900">{member.name}</h3>
+                             <div className="text-xs text-gray-400 font-bold uppercase tracking-wider">{member.role}</div>
+                         </div>
+                     </div>
+                     <button onClick={onClose} className="p-2 bg-gray-50 rounded-full hover:bg-gray-100 transition-colors">
+                        <X size={20} className="text-gray-500" />
+                     </button>
+                 </div>
+
+                 {/* --- Mesačný Výkon Card Replica --- */}
+                 <div className="relative w-full rounded-[32px] bg-white border border-gray-100 p-1 overflow-hidden shadow-xl shadow-blue-900/5 mb-6">
+                      <div className="bg-white/50 rounded-[28px] p-4 relative z-10">
+                          {/* Header */}
+                          <div className="flex justify-between items-center mb-4">
+                              <div className="flex items-center gap-2">
+                                   <div className="p-1.5 bg-blue-50 rounded-lg text-blue-600">
+                                        <Activity size={16} />
+                                   </div>
+                                   <span className="text-[10px] font-extrabold text-gray-500 uppercase tracking-widest">Mesačný Výkon</span>
+                              </div>
+                          </div>
+
+                          <div className="flex items-center justify-between gap-2 mb-4">
+                               {/* The Ring */}
+                               <div className="relative w-24 h-24 flex-shrink-0">
+                                   <svg className="w-full h-full transform -rotate-90 drop-shadow-xl" viewBox="0 0 160 160">
+                                       <defs>
+                                           <linearGradient id="memberPerfGradient" x1="0%" y1="0%" x2="100%" y2="0%">
+                                               <stop offset="0%" stopColor="#2dd4bf" />
+                                               <stop offset="50%" stopColor="#3b82f6" />
+                                               <stop offset="100%" stopColor="#8b5cf6" />
+                                           </linearGradient>
+                                       </defs>
+                                       <circle cx="80" cy="80" r="70" stroke="#f3f4f6" strokeWidth="12" fill="transparent" />
+                                       <circle 
+                                            cx="80" cy="80" r="70" 
+                                            stroke="url(#memberPerfGradient)" 
+                                            strokeWidth="12" 
+                                            fill="transparent" 
+                                            strokeLinecap="round"
+                                            strokeDasharray={2 * Math.PI * 70}
+                                            strokeDashoffset={(2 * Math.PI * 70) * (1 - Math.min(efficiency, 100) / 100)}
+                                            className="transition-all duration-1000 ease-out"
+                                       />
+                                   </svg>
+                                   <div className="absolute inset-0 flex flex-col items-center justify-center">
+                                       <span className="text-2xl font-black text-transparent bg-clip-text bg-gradient-to-br from-blue-600 to-indigo-600 tracking-tighter">
+                                           {efficiency}%
+                                       </span>
+                                       <span className="text-[7px] font-bold text-gray-400 uppercase tracking-widest mt-0.5">
+                                           Účinnosť
+                                       </span>
+                                   </div>
+                               </div>
+
+                               {/* Side Stats */}
+                               <div className="flex flex-col gap-2 flex-1 min-w-0">
+                                   <div className="relative overflow-hidden bg-gray-50 rounded-2xl p-2.5 border border-gray-100">
+                                       <div className="text-[8px] font-bold text-gray-400 uppercase tracking-widest mb-0.5">Odpracované</div>
+                                       <div className="text-xl font-black text-gray-800 flex items-baseline gap-1">
+                                           {member.workedHours.toFixed(1)}
+                                           <span className="text-[10px] text-gray-400 font-bold">h</span>
+                                       </div>
+                                   </div>
+                                   
+                                   <div className="relative overflow-hidden bg-white border border-gray-100 rounded-2xl p-2.5">
+                                       <div className="text-[8px] font-bold text-gray-400 uppercase tracking-widest mb-0.5">Bilancia</div>
+                                       <div className={`text-xl font-black flex items-baseline gap-1 ${isPositive ? 'text-teal-500' : 'text-rose-500'}`}>
+                                           {balanceFormatted}
+                                       </div>
+                                   </div>
+                               </div>
+                          </div>
+
+                          {/* Bottom Grid (NH / ODP / FOND) */}
+                          <div className="grid grid-cols-3 gap-1">
+                              <div className="p-2 bg-gray-50 rounded-xl flex flex-col items-center border border-gray-100">
+                                  <span className="text-[8px] font-bold text-gray-400 uppercase tracking-widest mb-1">NH</span>
+                                  <span className="text-sm font-black text-gray-600">{member.normHours}h</span>
+                              </div>
+
+                              <div className="p-2 bg-blue-50 rounded-xl flex flex-col items-center border border-blue-100 relative overflow-hidden">
+                                  <div className="absolute top-0 left-0 w-full h-0.5 bg-blue-400 opacity-50" />
+                                  <span className="text-[8px] font-bold text-blue-400 uppercase tracking-widest mb-1">ODP</span>
+                                  <span className="text-lg font-black text-blue-600">{member.workedHours.toFixed(1)}h</span>
+                              </div>
+
+                              <div className="p-2 bg-gray-50 rounded-xl flex flex-col items-center border border-gray-100">
+                                  <span className="text-[8px] font-bold text-gray-400 uppercase tracking-widest mb-1">FOND</span>
+                                  <span className="text-sm font-black text-gray-500">{member.calendarFund || 0}h</span>
+                              </div>
+                          </div>
+                      </div>
+                 </div>
+
+                 <button 
+                    onClick={onClose}
+                    className="w-full py-4 bg-gray-900 text-white rounded-2xl font-bold shadow-lg shadow-gray-900/20 active:scale-[0.98] transition-all"
+                 >
+                    Zavrieť
+                 </button>
+             </div>
+        </div>,
+        document.body
+    );
 };
 
 // --- Invite Modal ---
@@ -967,3 +1112,4 @@ const SettingsMenu = ({ onDelete, theme }: { onDelete: () => void, theme: any })
 };
 
 export default TeamView;
+
