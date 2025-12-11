@@ -1,5 +1,4 @@
 
-
 import React, { useState, useEffect, useMemo, useCallback, useRef } from 'react';
 import { createPortal } from 'react-dom';
 import { Plus, ArrowLeft, Zap, Crown, UserMinus, Settings, Power, Activity, Lock, Unlock, Users, Share2, Copy, LogIn, CheckCircle, MoreVertical, X, Trash2, ShieldAlert, Briefcase, Clock, Calendar, ChevronRight, TrendingUp, TrendingDown } from 'lucide-react';
@@ -813,27 +812,25 @@ const TeamView: React.FC<TeamViewProps> = ({ user, records, shiftConfig }) => {
   );
 };
 
-// --- Member Detail Modal (Mesačný Výkon Style) ---
+// --- Member Detail Modal (Updated to match Screenshot) ---
 const MemberDetailModal = ({ isOpen, member, onClose }: { isOpen: boolean, member: GroupMember | null, onClose: () => void }) => {
     if (!isOpen || !member) return null;
 
-    // Calculate Stats
+    // Calculations
     const efficiency = member.workedHours > 0 
         ? Math.round((member.normHours / member.workedHours) * 100) 
         : 0;
     
-    // Balance (Norm > Worked = Positive/Saved in this app context based on prev logic, 
-    // BUT usually Balance = Worked - Norm. 
-    // Let's stick to the visual logic: If I worked 20h and Norm was 20h -> 100%.
-    // If I worked 16h and Norm was 20h -> 125% efficiency (Saved time) -> Positive Balance +4h.
-    // If I worked 24h and Norm was 20h -> 83% efficiency (Overtime/Slower) -> Negative Balance -4h.
-    // Wait, let's look at ManualEntry logic again. 
-    // "Performance % = (Norm / Worked) * 100".
-    // "Balance = Norm - Worked".
-    // So if Norm 20, Worked 16 -> Balance +4.
-    const balanceVal = member.normHours - member.workedHours;
-    const isPositive = balanceVal >= 0;
-    const balanceFormatted = `${isPositive ? '+' : ''}${balanceVal.toFixed(1)}h`;
+    // Balance Logic: Norm - Worked
+    const balance = member.normHours - member.workedHours;
+    const isPositive = balance <= 0; // "Positive" in context of overtime usually means Good/Green, but screenshot shows Red for negative balance. 
+    
+    const balanceColor = balance < 0 ? 'text-rose-500' : 'text-teal-500';
+
+    // Chart Props
+    const radius = 56;
+    const circumference = 2 * Math.PI * radius;
+    const strokeDashoffset = circumference - (Math.min(efficiency, 100) / 100) * circumference;
 
     return createPortal(
         <div className="fixed inset-0 z-[1000] flex items-end justify-center sm:items-center">
@@ -843,9 +840,10 @@ const MemberDetailModal = ({ isOpen, member, onClose }: { isOpen: boolean, membe
              />
              <div className="bg-white w-full max-w-sm rounded-t-[32px] sm:rounded-[32px] p-6 pb-8 z-10 shadow-2xl transform transition-transform animate-slide-up mx-auto mb-0 sm:mb-auto overflow-hidden relative">
                  
-                 {/* Decorative background */}
+                 {/* Decorative background blur */}
                  <div className="absolute top-[-20%] right-[-20%] w-[200px] h-[200px] bg-blue-100 rounded-full blur-[60px] pointer-events-none opacity-50" />
                  
+                 {/* Header (Avatar + Name) */}
                  <div className="flex justify-between items-center mb-6 relative z-10">
                      <div className="flex items-center gap-3">
                          <div className={`w-12 h-12 rounded-2xl flex items-center justify-center font-bold text-white text-lg shadow-md ${member.role === 'Admin' ? 'bg-gradient-to-br from-amber-400 to-orange-500' : 'bg-gradient-to-br from-slate-400 to-slate-600'}`}>
@@ -861,95 +859,87 @@ const MemberDetailModal = ({ isOpen, member, onClose }: { isOpen: boolean, membe
                      </button>
                  </div>
 
-                 {/* --- Mesačný Výkon Card Replica --- */}
-                 <div className="relative w-full rounded-[32px] bg-white border border-gray-100 p-1 overflow-hidden shadow-xl shadow-blue-900/5 mb-6">
-                      <div className="bg-white/50 rounded-[28px] p-4 relative z-10">
-                          {/* Header */}
-                          <div className="flex justify-between items-center mb-4">
-                              <div className="flex items-center gap-2">
-                                   <div className="p-1.5 bg-blue-50 rounded-lg text-blue-600">
-                                        <Activity size={16} />
-                                   </div>
-                                   <span className="text-[10px] font-extrabold text-gray-500 uppercase tracking-widest">Mesačný Výkon</span>
-                              </div>
-                          </div>
+                 {/* --- CARD START --- */}
+                 <div className="bg-white rounded-[32px] p-6 shadow-xl shadow-blue-900/5 relative overflow-hidden border border-gray-100">
+                    
+                    {/* Card Title */}
+                    <div className="flex items-center gap-2 mb-6">
+                        <Activity size={18} className="text-blue-500" />
+                        <span className="text-xs font-black text-gray-400 uppercase tracking-widest">Mesačný Výkon</span>
+                    </div>
 
-                          <div className="flex items-center justify-between gap-2 mb-4">
-                               {/* The Ring */}
-                               <div className="relative w-24 h-24 flex-shrink-0">
-                                   <svg className="w-full h-full transform -rotate-90 drop-shadow-xl" viewBox="0 0 160 160">
-                                       <defs>
-                                           <linearGradient id="memberPerfGradient" x1="0%" y1="0%" x2="100%" y2="0%">
-                                               <stop offset="0%" stopColor="#2dd4bf" />
-                                               <stop offset="50%" stopColor="#3b82f6" />
-                                               <stop offset="100%" stopColor="#8b5cf6" />
-                                           </linearGradient>
-                                       </defs>
-                                       <circle cx="80" cy="80" r="70" stroke="#f3f4f6" strokeWidth="12" fill="transparent" />
-                                       <circle 
-                                            cx="80" cy="80" r="70" 
-                                            stroke="url(#memberPerfGradient)" 
-                                            strokeWidth="12" 
-                                            fill="transparent" 
-                                            strokeLinecap="round"
-                                            strokeDasharray={2 * Math.PI * 70}
-                                            strokeDashoffset={(2 * Math.PI * 70) * (1 - Math.min(efficiency, 100) / 100)}
-                                            className="transition-all duration-1000 ease-out"
-                                       />
-                                   </svg>
-                                   <div className="absolute inset-0 flex flex-col items-center justify-center">
-                                       <span className="text-2xl font-black text-transparent bg-clip-text bg-gradient-to-br from-blue-600 to-indigo-600 tracking-tighter">
-                                           {efficiency}%
-                                       </span>
-                                       <span className="text-[7px] font-bold text-gray-400 uppercase tracking-widest mt-0.5">
-                                           Účinnosť
-                                       </span>
-                                   </div>
-                               </div>
+                    {/* Main Content Row */}
+                    <div className="flex items-center justify-between gap-4 mb-8">
+                         
+                         {/* Left: Chart - RESIZED */}
+                         <div className="relative w-28 h-28 flex items-center justify-center flex-shrink-0">
+                            <svg className="w-full h-full transform -rotate-90" viewBox="0 0 128 128">
+                                {/* Track */}
+                                <circle cx="64" cy="64" r={radius} stroke="#f3f4f6" strokeWidth="12" fill="transparent" />
+                                {/* Progress */}
+                                <circle 
+                                    cx="64" cy="64" r={radius} 
+                                    stroke="url(#modalGradient)" 
+                                    strokeWidth="12" 
+                                    fill="transparent" 
+                                    strokeLinecap="round" 
+                                    strokeDasharray={circumference} 
+                                    strokeDashoffset={strokeDashoffset} 
+                                    className="transition-all duration-1000 ease-out"
+                                />
+                                <defs>
+                                    <linearGradient id="modalGradient" x1="0%" y1="0%" x2="100%" y2="0%">
+                                        <stop offset="0%" stopColor="#3b82f6" />
+                                        <stop offset="100%" stopColor="#8b5cf6" />
+                                    </linearGradient>
+                                </defs>
+                            </svg>
+                            {/* Inner Info - CHANGED */}
+                            <div className="absolute inset-0 flex flex-col items-center justify-center">
+                                <span className="text-2xl font-black text-gray-900 tracking-tight">{efficiency}%</span>
+                                <span className="text-[8px] font-bold text-gray-400 uppercase tracking-wide">Účinnosť</span>
+                            </div>
+                         </div>
 
-                               {/* Side Stats */}
-                               <div className="flex flex-col gap-2 flex-1 min-w-0">
-                                   <div className="relative overflow-hidden bg-gray-50 rounded-2xl p-2.5 border border-gray-100">
-                                       <div className="text-[8px] font-bold text-gray-400 uppercase tracking-widest mb-0.5">Odpracované</div>
-                                       <div className="text-xl font-black text-gray-800 flex items-baseline gap-1">
-                                           {member.workedHours.toFixed(1)}
-                                           <span className="text-[10px] text-gray-400 font-bold">h</span>
-                                       </div>
-                                   </div>
-                                   
-                                   <div className="relative overflow-hidden bg-white border border-gray-100 rounded-2xl p-2.5">
-                                       <div className="text-[8px] font-bold text-gray-400 uppercase tracking-widest mb-0.5">Bilancia</div>
-                                       <div className={`text-xl font-black flex items-baseline gap-1 ${isPositive ? 'text-teal-500' : 'text-rose-500'}`}>
-                                           {balanceFormatted}
-                                       </div>
-                                   </div>
-                               </div>
-                          </div>
+                         {/* Right: Key Stats */}
+                         <div className="flex-1 space-y-3 min-w-0">
+                            {/* Odpracované Box */}
+                            <div className="bg-white border border-gray-50 rounded-2xl p-3 shadow-sm">
+                                <div className="text-[9px] font-bold text-gray-400 uppercase tracking-widest mb-1">Odpracované</div>
+                                <div className="text-2xl font-black text-gray-900 leading-none">
+                                    {member.workedHours.toFixed(1)} <span className="text-sm text-gray-400 font-bold ml-0.5">h</span>
+                                </div>
+                            </div>
+                            {/* Bilancia Box */}
+                            <div className="bg-white border border-gray-100 rounded-2xl p-3 shadow-sm">
+                                <div className="text-[9px] font-bold text-gray-400 uppercase tracking-widest mb-1">Bilancia</div>
+                                <div className={`text-xl font-black leading-none ${balanceColor}`}>
+                                    {balance > 0 ? '+' : ''}{balance.toFixed(1)}h
+                                </div>
+                            </div>
+                         </div>
+                    </div>
 
-                          {/* Bottom Grid (NH / ODP / FOND) */}
-                          <div className="grid grid-cols-3 gap-1">
-                              <div className="p-2 bg-gray-50 rounded-xl flex flex-col items-center border border-gray-100">
-                                  <span className="text-[8px] font-bold text-gray-400 uppercase tracking-widest mb-1">NH</span>
-                                  <span className="text-sm font-black text-gray-600">{member.normHours}h</span>
-                              </div>
+                    {/* Bottom Row Grid - Updated to 2 columns, removed ODP */}
+                    <div className="grid grid-cols-2 gap-3">
+                        {/* NH */}
+                        <div className="bg-white border border-gray-100 rounded-2xl py-3 flex flex-col items-center justify-center">
+                            <span className="text-[9px] font-bold text-gray-400 uppercase mb-1">NH</span>
+                            <span className="text-lg font-black text-gray-800">{member.normHours}h</span>
+                        </div>
+                        {/* FOND */}
+                        <div className="bg-white border border-gray-100 rounded-2xl py-3 flex flex-col items-center justify-center">
+                            <span className="text-[9px] font-bold text-gray-400 uppercase mb-1">FOND</span>
+                            <span className="text-lg font-black text-gray-800">{member.calendarFund || 0}h</span>
+                        </div>
+                    </div>
 
-                              <div className="p-2 bg-blue-50 rounded-xl flex flex-col items-center border border-blue-100 relative overflow-hidden">
-                                  <div className="absolute top-0 left-0 w-full h-0.5 bg-blue-400 opacity-50" />
-                                  <span className="text-[8px] font-bold text-blue-400 uppercase tracking-widest mb-1">ODP</span>
-                                  <span className="text-lg font-black text-blue-600">{member.workedHours.toFixed(1)}h</span>
-                              </div>
-
-                              <div className="p-2 bg-gray-50 rounded-xl flex flex-col items-center border border-gray-100">
-                                  <span className="text-[8px] font-bold text-gray-400 uppercase tracking-widest mb-1">FOND</span>
-                                  <span className="text-sm font-black text-gray-500">{member.calendarFund || 0}h</span>
-                              </div>
-                          </div>
-                      </div>
                  </div>
+                 {/* --- CARD END --- */}
 
                  <button 
                     onClick={onClose}
-                    className="w-full py-4 bg-gray-900 text-white rounded-2xl font-bold shadow-lg shadow-gray-900/20 active:scale-[0.98] transition-all"
+                    className="w-full mt-6 py-4 bg-gray-900 text-white rounded-2xl font-bold shadow-lg shadow-gray-900/20 active:scale-[0.98] transition-all"
                  >
                     Zavrieť
                  </button>
@@ -1112,4 +1102,3 @@ const SettingsMenu = ({ onDelete, theme }: { onDelete: () => void, theme: any })
 };
 
 export default TeamView;
-
