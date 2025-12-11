@@ -72,7 +72,7 @@ const App: React.FC = () => {
           }
       } catch (err: any) {
           // Log detailed error message
-          console.error('Error fetching records details:', err.message || err);
+          console.error('Error fetching records details:', JSON.stringify(err, null, 2));
           if (err.code === '42P01') {
              console.warn('Tabuľka "attendance_records" pravdepodobne neexistuje v databáze.');
           }
