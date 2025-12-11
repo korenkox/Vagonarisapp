@@ -5,6 +5,7 @@ import Auth from './components/Auth';
 import Dashboard from './components/Dashboard';
 import WelcomeScreen from './components/WelcomeScreen';
 import { supabase } from './supabaseClient';
+import { AlertTriangle, X } from 'lucide-react';
 
 const App: React.FC = () => {
   // Default view is INTRO, auth listener will switch to DASHBOARD if logged in
@@ -17,6 +18,9 @@ const App: React.FC = () => {
   
   // Data State
   const [records, setRecords] = useState<AttendanceRecord[]>([]);
+
+  // Global Error State (e.g. Missing Table)
+  const [globalError, setGlobalError] = useState<{title: string, message: string} | null>(null);
   
   // Initialize shiftConfig from localStorage if available
   const [shiftConfig, setShiftConfig] = useState<ShiftConfig>(() => {
@@ -72,9 +76,16 @@ const App: React.FC = () => {
           }
       } catch (err: any) {
           // Log detailed error message
-          console.error('Error fetching records details:', JSON.stringify(err, null, 2));
+          const errorMessage = err.message || JSON.stringify(err, null, 2);
+          console.error('Error fetching records details:', errorMessage);
+          
           if (err.code === '42P01') {
-             console.warn('Tabuľka "attendance_records" pravdepodobne neexistuje v databáze.');
+             setGlobalError({
+                 title: 'Chýba databáza',
+                 message: 'Tabuľka "attendance_records" neexistuje. Prosím, vytvorte ju v Supabase SQL Editore.'
+             });
+          } else {
+             console.warn('Unknown error fetching records', err);
           }
       }
   }, []);
@@ -171,7 +182,8 @@ const App: React.FC = () => {
         if (error) throw error;
         
     } catch (err: any) {
-        console.error('Error deleting record:', err.message || err);
+        const msg = err.message || JSON.stringify(err);
+        console.error('Error deleting record:', msg);
         alert('Nepodarilo sa vymazať záznam. Skontrolujte pripojenie.');
         // Revert on error
         setRecords(previousRecords);
@@ -185,6 +197,24 @@ const App: React.FC = () => {
 
   return (
     <div className="min-h-screen w-full relative overflow-hidden bg-white">
+      {/* Global Error Toast */}
+      {globalError && (
+          <div className="fixed top-0 left-0 right-0 z-[9999] p-4 animate-fade-in-down">
+              <div className="max-w-md mx-auto bg-rose-50 border border-rose-100 shadow-xl rounded-2xl p-4 flex items-start gap-3">
+                  <div className="p-2 bg-rose-100 rounded-full text-rose-600">
+                      <AlertTriangle size={20} />
+                  </div>
+                  <div className="flex-1">
+                      <h3 className="text-sm font-bold text-gray-900">{globalError.title}</h3>
+                      <p className="text-xs text-gray-600 mt-1">{globalError.message}</p>
+                  </div>
+                  <button onClick={() => setGlobalError(null)} className="text-gray-400 hover:text-gray-600">
+                      <X size={18} />
+                  </button>
+              </div>
+          </div>
+      )}
+
       {currentView === AppView.INTRO && (
         <WelcomeScreen onNavigate={handleNavigateToAuth} />
       )}
@@ -208,6 +238,16 @@ const App: React.FC = () => {
           onUpdateShiftConfig={setShiftConfig}
         />
       )}
+      
+      <style>{`
+        @keyframes fadeInDown {
+            from { opacity: 0; transform: translateY(-20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .animate-fade-in-down {
+            animation: fadeInDown 0.5s ease-out forwards;
+        }
+      `}</style>
     </div>
   );
 };
