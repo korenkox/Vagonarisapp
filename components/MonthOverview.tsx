@@ -197,7 +197,37 @@ const MonthOverview: React.FC<MonthOverviewProps> = ({ config, onUpdateConfig, r
          </button>
       </div>
 
-      {/* Monthly Fund Card - Premium Design */}
+      {/* Calendar Navigation */}
+      <div className="flex justify-between items-center mb-6 px-4">
+         <button onClick={() => setCurrentDate(new Date(year, month - 1, 1))} className="w-10 h-10 flex items-center justify-center hover:bg-white rounded-full transition-colors text-gray-400 hover:text-gray-600 hover:shadow-sm">
+             <ChevronLeft size={24} />
+         </button>
+         <div className="flex flex-col items-center">
+             <span className="text-xl font-bold text-gray-800 tracking-tight uppercase">{MONTH_NAMES[month]}</span>
+             <span className="text-xs font-medium text-blue-500 tracking-[0.2em] bg-blue-50 px-2 py-0.5 rounded-full">{year}</span>
+         </div>
+         <button onClick={() => setCurrentDate(new Date(year, month + 1, 1))} className="w-10 h-10 flex items-center justify-center hover:bg-white rounded-full transition-colors text-gray-400 hover:text-gray-600 hover:shadow-sm">
+             <ChevronRight size={24} />
+         </button>
+      </div>
+
+      {/* Week Days Header */}
+      <div className="grid grid-cols-7 mb-2 px-2">
+         {['PO', 'UT', 'ST', 'ŠT', 'PI', 'SO', 'NE'].map((day, i) => (
+            <div key={day} className={`text-center text-[10px] font-bold ${i >= 5 ? 'text-rose-400' : 'text-gray-400'} opacity-70`}>
+               {day}
+            </div>
+         ))}
+      </div>
+
+      {/* Calendar Grid */}
+      <div className="relative mb-8">
+         <div className="grid grid-cols-7 relative z-10">
+            {renderCalendar()}
+         </div>
+      </div>
+
+      {/* Monthly Fund Card - MOVED HERE */}
       <div className="relative w-full bg-white/60 backdrop-blur-xl border border-white/60 rounded-[32px] p-1 shadow-2xl shadow-blue-900/5 mb-10 group overflow-hidden">
          {/* Inner Content */}
          <div className="bg-gradient-to-br from-white via-blue-50/30 to-white rounded-[28px] p-6 relative overflow-hidden">
@@ -235,36 +265,6 @@ const MonthOverview: React.FC<MonthOverviewProps> = ({ config, onUpdateConfig, r
                     />
                 </div>
             </div>
-         </div>
-      </div>
-
-      {/* Calendar Navigation */}
-      <div className="flex justify-between items-center mb-6 px-4">
-         <button onClick={() => setCurrentDate(new Date(year, month - 1, 1))} className="w-10 h-10 flex items-center justify-center hover:bg-white rounded-full transition-colors text-gray-400 hover:text-gray-600 hover:shadow-sm">
-             <ChevronLeft size={24} />
-         </button>
-         <div className="flex flex-col items-center">
-             <span className="text-xl font-bold text-gray-800 tracking-tight uppercase">{MONTH_NAMES[month]}</span>
-             <span className="text-xs font-medium text-blue-500 tracking-[0.2em] bg-blue-50 px-2 py-0.5 rounded-full">{year}</span>
-         </div>
-         <button onClick={() => setCurrentDate(new Date(year, month + 1, 1))} className="w-10 h-10 flex items-center justify-center hover:bg-white rounded-full transition-colors text-gray-400 hover:text-gray-600 hover:shadow-sm">
-             <ChevronRight size={24} />
-         </button>
-      </div>
-
-      {/* Week Days Header */}
-      <div className="grid grid-cols-7 mb-2 px-2">
-         {['PO', 'UT', 'ST', 'ŠT', 'PI', 'SO', 'NE'].map((day, i) => (
-            <div key={day} className={`text-center text-[10px] font-bold ${i >= 5 ? 'text-rose-400' : 'text-gray-400'} opacity-70`}>
-               {day}
-            </div>
-         ))}
-      </div>
-
-      {/* Calendar Grid */}
-      <div className="relative mb-8">
-         <div className="grid grid-cols-7 relative z-10">
-            {renderCalendar()}
          </div>
       </div>
 
