@@ -1,5 +1,5 @@
 
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { AppView, User, AttendanceRecord, ShiftConfig } from './types';
 import Auth from './components/Auth';
 import Dashboard from './components/Dashboard';
@@ -22,7 +22,10 @@ const App: React.FC = () => {
   // Global Error State (e.g. Missing Table)
   const [globalError, setGlobalError] = useState<{title: string, message: string} | null>(null);
   
-  // Initialize shiftConfig from localStorage if available
+  // Ref to track if config was loaded from DB to prevent overwriting DB with local defaults
+  const isConfigLoadedFromDb = useRef(false);
+
+  // Initialize shiftConfig from localStorage if available (for offline/fast load)
   const [shiftConfig, setShiftConfig] = useState<ShiftConfig>(() => {
     try {
       const savedConfig = localStorage.getItem('shift_config');
@@ -90,6 +93,30 @@ const App: React.FC = () => {
       }
   }, []);
 
+  const fetchSettings = useCallback(async (userId: string) => {
+      try {
+          const { data, error } = await supabase
+              .from('user_settings')
+              .select('shift_config')
+              .eq('user_id', userId)
+              .single();
+
+          if (error && error.code !== 'PGRST116') { // PGRST116 is "Row not found", which is fine for new users
+               console.error('Error fetching settings:', error);
+          }
+
+          if (data && data.shift_config) {
+              setShiftConfig(data.shift_config);
+              isConfigLoadedFromDb.current = true;
+          } else {
+              // If no settings on server, we mark as loaded so the local default can be saved to server later
+              isConfigLoadedFromDb.current = true;
+          }
+      } catch (err) {
+          console.error('Unexpected error fetching settings', err);
+      }
+  }, []);
+
   // --- 1. SESSION MANAGEMENT ---
   useEffect(() => {
     // Check active session on load
@@ -101,6 +128,7 @@ const App: React.FC = () => {
         });
         setCurrentView(AppView.DASHBOARD);
         fetchRecords(session.user.id);
+        fetchSettings(session.user.id);
       }
     });
 
@@ -115,15 +143,17 @@ const App: React.FC = () => {
         });
         setCurrentView(AppView.DASHBOARD);
         fetchRecords(session.user.id);
+        fetchSettings(session.user.id);
       } else {
         setUser(null);
         setCurrentView(AppView.INTRO);
         setRecords([]); // Clear sensitive data
+        isConfigLoadedFromDb.current = false;
       }
     });
 
     return () => subscription.unsubscribe();
-  }, [fetchRecords]);
+  }, [fetchRecords, fetchSettings]);
 
   const handleNavigateToAuth = (mode: 'login' | 'register') => {
       setAuthMode(mode);
@@ -190,10 +220,33 @@ const App: React.FC = () => {
     }
   };
 
-  // Shift config is still local for now, can be moved to DB later
+  // --- 4. CONFIG SYNC ---
+  // Sync config to LocalStorage AND Supabase when changed
   useEffect(() => {
+    // Always save to local storage for offline backup
     localStorage.setItem('shift_config', JSON.stringify(shiftConfig));
-  }, [shiftConfig]);
+
+    // Debounce save to Supabase to prevent spamming DB on rapid changes
+    const saveToCloud = setTimeout(async () => {
+        if (!user || !isConfigLoadedFromDb.current) return;
+        
+        try {
+            const { error } = await supabase
+                .from('user_settings')
+                .upsert({
+                    user_id: (await supabase.auth.getUser()).data.user?.id,
+                    shift_config: shiftConfig,
+                    updated_at: new Date().toISOString()
+                }, { onConflict: 'user_id' });
+            
+            if (error) console.error('Error syncing settings:', error);
+        } catch (err) {
+            console.error('Async settings save error:', err);
+        }
+    }, 1000); // 1 second debounce
+
+    return () => clearTimeout(saveToCloud);
+  }, [shiftConfig, user]);
 
   return (
     <div className="min-h-screen w-full relative overflow-hidden bg-white">
