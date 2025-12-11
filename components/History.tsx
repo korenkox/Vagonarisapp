@@ -119,22 +119,37 @@ const TeamView: React.FC<TeamViewProps> = ({ user, records, shiftConfig }) => {
 
   // --- 2. Fetch Groups from Supabase ---
   const fetchGroups = useCallback(async (isInitial = false) => {
+      // Ak nemáme user ID, nemôžeme filtrovať, radšej počkáme
+      if (!currentUserId) return;
+      
       if (isInitial) setLoading(true);
       
       try {
+          // ZMENA: Používame !inner join na filtrovanie skupín, kde je užívateľ členom
           const { data: groupsData, error: groupsError } = await supabase
             .from('groups')
-            .select('*');
+            .select('*, group_members!inner(user_id)')
+            .eq('group_members.user_id', currentUserId);
 
           if (groupsError) throw groupsError;
-          if (!groupsData) return;
+          if (!groupsData) {
+              setGroups([]);
+              return;
+          }
 
-          const { data: membersData, error: membersError } = await supabase
-            .from('group_members')
-            .select('*')
-            .in('group_id', groupsData.map(g => g.id));
-
-          if (membersError) throw membersError;
+          // Teraz načítame všetkých členov pre tieto nájdené skupiny (aby sme videli kolegov)
+          const groupIds = groupsData.map(g => g.id);
+          
+          let membersData: any[] = [];
+          if (groupIds.length > 0) {
+              const { data: members, error: membersError } = await supabase
+                .from('group_members')
+                .select('*')
+                .in('group_id', groupIds);
+              
+              if (membersError) throw membersError;
+              membersData = members || [];
+          }
 
           const constructedGroups: Group[] = groupsData.map(g => {
               const members = membersData?.filter(m => m.group_id === g.id).map(m => ({
@@ -153,7 +168,6 @@ const TeamView: React.FC<TeamViewProps> = ({ user, records, shiftConfig }) => {
               const totalCF = members.reduce((sum, m) => sum + (m.calendarFund || 0), 0);
               
               // Efficiency Logic: Norm / Worked * 100
-              // If Norm is 100h and Worked is 80h -> 125% Efficiency (Saved time)
               const efficiency = totalW > 0 ? Math.round((totalN / totalW) * 100) : 0;
               
               return {
@@ -184,7 +198,7 @@ const TeamView: React.FC<TeamViewProps> = ({ user, records, shiftConfig }) => {
       } finally {
           setLoading(false);
       }
-  }, []);
+  }, [currentUserId]); // Pridaná závislosť na currentUserId
 
   useEffect(() => {
       fetchGroups(true);
