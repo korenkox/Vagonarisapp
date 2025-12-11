@@ -2,7 +2,7 @@
 import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { createPortal } from 'react-dom';
 import { AttendanceRecord, ShiftConfig } from '../types';
-import { Clock, ChevronRight, ChevronLeft, Sun, Moon, Briefcase, Coffee, Sparkles, X, Check, Share2, TrendingUp, TrendingDown, CalendarDays, TriangleAlert, Rocket, Target, FileText, Trash2, Calendar, TrainFront } from 'lucide-react';
+import { Clock, ChevronRight, ChevronLeft, Sun, Moon, Briefcase, Coffee, Sparkles, X, Check, Share2, TrendingUp, TrendingDown, CalendarDays, AlertTriangle, Rocket, Target, FileText, Trash2, Calendar, Train } from 'lucide-react';
 
 interface ManualEntryProps {
   onSave: (record: AttendanceRecord) => void;
@@ -176,7 +176,7 @@ const ManualEntry: React.FC<ManualEntryProps> = ({ onSave, onDelete, user, recor
           iconText: '!',
           headerIcon: '!',
           footerText: 'Pozor: Výkon pod limitom',
-          statusIcon: <TriangleAlert size={12} className="text-[#E93B3B]" />,
+          statusIcon: <AlertTriangle size={12} className="text-[#E93B3B]" />,
           glow: 'radial-gradient(circle, rgba(255, 107, 107, 0.4) 0%, rgba(233, 59, 59, 0.1) 60%, rgba(255,255,255,0) 80%)',
           noEffects: false
       };
@@ -333,7 +333,7 @@ const ManualEntry: React.FC<ManualEntryProps> = ({ onSave, onDelete, user, recor
       <div className="flex justify-between items-center mb-4 pt-2">
          <div>
             <div className="flex items-center gap-2 mb-1">
-               <TrainFront size={20} className="text-blue-600" />
+               <Train size={20} className="text-blue-600" />
                <span className="text-[10px] font-bold text-gray-500 tracking-widest">VAGONARIS TRACKER</span>
             </div>
             <h1 className="text-xl font-light text-gray-800 leading-tight">
