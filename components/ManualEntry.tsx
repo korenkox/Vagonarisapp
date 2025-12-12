@@ -2,7 +2,7 @@
 import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { createPortal } from 'react-dom';
 import { AttendanceRecord, ShiftConfig } from '../types';
-import { Clock, ChevronRight, ChevronLeft, Sun, Moon, Briefcase, Coffee, Sparkles, X, Check, Share2, TrendingUp, TrendingDown, CalendarDays, AlertTriangle, Rocket, Target, FileText, Trash2, Calendar, Train } from 'lucide-react';
+import { Clock, ChevronRight, ChevronLeft, Sun, Moon, Briefcase, Coffee, Sparkles, X, Check, Share2, TrendingUp, TrendingDown, CalendarDays, AlertTriangle, Rocket, Train, Trash2, Calendar } from 'lucide-react';
 
 interface ManualEntryProps {
   onSave: (record: AttendanceRecord) => void;
@@ -50,9 +50,6 @@ const ManualEntry: React.FC<ManualEntryProps> = ({ onSave, onDelete, user, recor
   const [departureTime, setDepartureTime] = useState('14:30');
   const [normHours, setNormHours] = useState('8');
   const [breakMinutes, setBreakMinutes] = useState('30');
-
-  // State for TimePicker
-  const [activePicker, setActivePicker] = useState<'arrival' | 'departure' | null>(null);
 
   // State for Summary View
   const [showSummary, setShowSummary] = useState(false);
@@ -361,16 +358,32 @@ const ManualEntry: React.FC<ManualEntryProps> = ({ onSave, onDelete, user, recor
 
       {/* Input Rows */}
       <div className="flex gap-3 mb-3">
-         <button onClick={() => setActivePicker('arrival')} className="flex-1 bg-white rounded-[28px] p-4 shadow-lg shadow-blue-900/5 relative overflow-hidden group cursor-pointer text-left w-full hover:shadow-xl transition-all">
+         {/* Arrival */}
+         <div className="relative flex-1 bg-white rounded-[28px] p-4 shadow-lg shadow-blue-900/5 overflow-hidden group hover:shadow-xl transition-all">
             <div className="text-[9px] font-bold text-gray-400 uppercase tracking-widest mb-1 group-hover:text-teal-500 transition-colors">Príchod</div>
-            <div className="text-2xl font-light text-gray-800 mb-1 pointer-events-none">{arrivalTime}</div>
-            <div className="absolute bottom-3 right-3 text-gray-300 group-hover:text-teal-500 transition-all"><Sun size={20} /></div>
-         </button>
-         <button onClick={() => setActivePicker('departure')} className="flex-1 bg-white rounded-[28px] p-4 shadow-lg shadow-blue-900/5 relative overflow-hidden group cursor-pointer text-left w-full hover:shadow-xl transition-all">
+            <div className="text-2xl font-light text-gray-800 mb-1 pointer-events-none relative z-0">{arrivalTime}</div>
+            <div className="absolute bottom-3 right-3 text-gray-300 group-hover:text-teal-500 transition-all pointer-events-none"><Sun size={20} /></div>
+            <input 
+               type="time" 
+               value={arrivalTime} 
+               onChange={(e) => setArrivalTime(e.target.value)}
+               className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10"
+               style={{ display: 'block' }}
+            />
+         </div>
+         {/* Departure */}
+         <div className="relative flex-1 bg-white rounded-[28px] p-4 shadow-lg shadow-blue-900/5 overflow-hidden group hover:shadow-xl transition-all">
             <div className="text-[9px] font-bold text-gray-400 uppercase tracking-widest mb-1 group-hover:text-indigo-500 transition-colors">Odchod</div>
-            <div className="text-2xl font-light text-gray-800 mb-1 pointer-events-none">{departureTime}</div>
-            <div className="absolute bottom-3 right-3 text-gray-300 group-hover:text-indigo-500 transition-all"><Moon size={20} /></div>
-         </button>
+            <div className="text-2xl font-light text-gray-800 mb-1 pointer-events-none relative z-0">{departureTime}</div>
+            <div className="absolute bottom-3 right-3 text-gray-300 group-hover:text-indigo-500 transition-all pointer-events-none"><Moon size={20} /></div>
+            <input 
+               type="time" 
+               value={departureTime} 
+               onChange={(e) => setDepartureTime(e.target.value)}
+               className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10"
+               style={{ display: 'block' }}
+            />
+         </div>
       </div>
 
       <div className="flex gap-3 mb-5">
@@ -547,7 +560,6 @@ const ManualEntry: React.FC<ManualEntryProps> = ({ onSave, onDelete, user, recor
       <div className="h-6" />
       
       {/* Portals (Pickers, Summary, Actions) */}
-      <TimePickerSheet isOpen={!!activePicker} onClose={() => setActivePicker(null)} title={activePicker === 'arrival' ? 'Nastaviť príchod' : 'Nastaviť odchod'} value={activePicker === 'arrival' ? arrivalTime : departureTime} onChange={(val: string) => activePicker === 'arrival' ? setArrivalTime(val) : setDepartureTime(val)} />
       <DatePickerSheet isOpen={isDatePickerOpen} onClose={() => setIsDatePickerOpen(false)} selectedDate={date} onSelect={(d: Date) => { setDate(d); setIsDatePickerOpen(false); }} />
       {showSummary && summaryData && <DaySummaryOverlay data={summaryData} onClose={() => setShowSummary(false)} onConfirm={handleFinalSave} arrival={arrivalTime} departure={departureTime} />}
       <RecordActionSheet isOpen={!!selectedRecord} record={selectedRecord} onClose={() => setSelectedRecord(null)} onDelete={() => selectedRecord && handleDeleteRecord(selectedRecord.id)} />
@@ -585,52 +597,6 @@ const RecordActionSheet = ({ isOpen, record, onClose, onDelete }: any) => {
         </div>, document.body
     );
 };
-
-const TimePickerSheet = ({ isOpen, onClose, title, value, onChange }: any) => {
-   const [hours, setHours] = useState(0);
-   const [minutes, setMinutes] = useState(0);
-   useEffect(() => {
-     if (isOpen && value) {
-       const [h, m] = value.split(':').map(Number);
-       setHours(h || 0);
-       setMinutes(m || 0);
-     }
-   }, [isOpen, value]);
-   const hoursRef = useRef<HTMLDivElement>(null);
-   const minutesRef = useRef<HTMLDivElement>(null);
-   useEffect(() => {
-     if (isOpen) {
-       setTimeout(() => {
-          hoursRef.current?.querySelector(`[data-value="${hours}"]`)?.scrollIntoView({ block: 'center', behavior: 'smooth' });
-          minutesRef.current?.querySelector(`[data-value="${minutes}"]`)?.scrollIntoView({ block: 'center', behavior: 'smooth' });
-       }, 100);
-     }
-   }, [isOpen]);
-   const handleConfirm = () => { onChange(`${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}`); onClose(); };
-   const hourOptions = Array.from({length: 24}, (_, i) => i);
-   const minuteOptions = Array.from({length: 60}, (_, i) => i);
-   if (!isOpen) return null;
-   return createPortal(
-      <div className="fixed inset-0 z-[100] flex items-end justify-center">
-         <div className="absolute inset-0 bg-gray-900/40 backdrop-blur-sm transition-opacity animate-fade-in" onClick={onClose} />
-         <div className="bg-white w-full max-w-lg rounded-t-[32px] p-6 pb-8 z-10 shadow-2xl transform transition-transform animate-slide-up relative overflow-hidden">
-             <div className="flex justify-between items-center mb-6"><h3 className="text-xl font-light text-gray-800 tracking-tight">{title}</h3><button onClick={onClose} className="p-2 bg-gray-100 rounded-full hover:bg-gray-200 transition-colors"><X size={20} className="text-gray-500" /></button></div>
-             <div className="relative h-48 flex justify-center gap-2 mb-8 select-none">
-                <div className="absolute top-1/2 -translate-y-1/2 w-full h-12 bg-gray-50 rounded-xl pointer-events-none border-y border-gray-100 z-0" />
-                <div ref={hoursRef} className="w-24 h-full overflow-y-auto no-scrollbar py-[72px] text-center snap-y snap-mandatory relative z-10 mask-gradient">
-                   {hourOptions.map(h => (<div key={h} data-value={h} onClick={() => setHours(h)} className={`h-12 flex items-center justify-center text-2xl transition-all snap-center cursor-pointer ${h === hours ? 'font-bold text-gray-900 scale-110' : 'font-light text-gray-300 scale-90'}`}>{h.toString().padStart(2, '0')}</div>))}
-                </div>
-                <div className="flex items-center justify-center pb-2 text-xl font-bold text-gray-300 relative z-10">:</div>
-                <div ref={minutesRef} className="w-24 h-full overflow-y-auto no-scrollbar py-[72px] text-center snap-y snap-mandatory relative z-10 mask-gradient">
-                   {minuteOptions.map(m => (<div key={m} data-value={m} onClick={() => setMinutes(m)} className={`h-12 flex items-center justify-center text-2xl transition-all snap-center cursor-pointer ${m === minutes ? 'font-bold text-gray-900 scale-110' : 'font-light text-gray-300 scale-90'}`}>{m.toString().padStart(2, '0')}</div>))}
-                </div>
-             </div>
-             <button onClick={handleConfirm} className="w-full py-4 bg-gray-900 text-white rounded-2xl font-bold text-lg hover:bg-black active:scale-[0.98] transition-all shadow-lg shadow-gray-900/20">Potvrdiť čas</button>
-         </div>
-         <style>{` .mask-gradient { mask-image: linear-gradient(to bottom, transparent, black 20%, black 80%, transparent); -webkit-mask-image: linear-gradient(to bottom, transparent, black 20%, black 80%, transparent); } .animate-slide-up { animation: slideUp 0.3s cubic-bezier(0.16, 1, 0.3, 1); } @keyframes slideUp { from { transform: translateY(100%); } to { transform: translateY(0); } } `}</style>
-      </div>, document.body
-   );
-}
 
 const DatePickerSheet = ({ isOpen, onClose, selectedDate, onSelect }: any) => {
    const [viewDate, setViewDate] = useState(selectedDate || new Date());
