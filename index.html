@@ -1,8 +1,9 @@
+
 <!DOCTYPE html>
 <html lang="sk">
   <head>
     <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
     <title>Dochádzka Pro</title>
     <meta name="theme-color" content="#ffffff" />
     <meta name="description" content="Profesionálna PWA aplikácia na sledovanie dochádzky">
@@ -39,6 +40,12 @@
         .compact-mode-padding {
            padding-bottom: 5rem !important; /* Menej miesta pod obsahom */
         }
+      }
+      
+      /* Bezpečné zóny pre iPhone X a novšie */
+      body {
+        padding-top: env(safe-area-inset-top);
+        padding-bottom: env(safe-area-inset-bottom);
       }
     </style>
 <script type="importmap">
