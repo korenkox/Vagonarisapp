@@ -12,6 +12,13 @@ interface ManualEntryProps {
   shiftConfig: ShiftConfig;
 }
 
+// Helper: Haptic Feedback
+const triggerHaptic = () => {
+    if (typeof navigator !== 'undefined' && navigator.vibrate) {
+        navigator.vibrate(50); // Light tap
+    }
+};
+
 // --- Helper Hook for Counting Numbers ---
 const useCounter = (end: number, duration: number = 1000) => {
   const [count, setCount] = useState(0);
@@ -180,6 +187,7 @@ const ManualEntry: React.FC<ManualEntryProps> = ({ onSave, onDelete, user, recor
   const strokeDashoffset = circumference - (safePercentage / 100) * circumference;
 
   const handleAnalyze = () => {
+    triggerHaptic();
     setIsAnalyzing(true);
     setTimeout(() => {
       const parseTime = (t: string) => {
@@ -213,6 +221,7 @@ const ManualEntry: React.FC<ManualEntryProps> = ({ onSave, onDelete, user, recor
   };
 
   const handleFinalSave = () => {
+    triggerHaptic();
     if (!summaryData) return;
     const localDateStr = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
     onSave({
@@ -230,6 +239,7 @@ const ManualEntry: React.FC<ManualEntryProps> = ({ onSave, onDelete, user, recor
   };
 
   const handleDeleteRecord = (id: string) => {
+      triggerHaptic();
       onDelete(id);
       setSelectedRecord(null);
   };
@@ -256,22 +266,22 @@ const ManualEntry: React.FC<ManualEntryProps> = ({ onSave, onDelete, user, recor
         @keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
         @keyframes popIn { 0% { transform: scale(0); opacity: 0; } 70% { transform: scale(1.2); opacity: 1; } 100% { transform: scale(1); opacity: 1; } }
         @keyframes float { 0% { transform: translateY(0); } 50% { transform: translateY(-4px); } 100% { transform: translateY(0); } }
-        @keyframes slideUpFade { to { opacity: 1; transform: translateY(0); } }
-        @keyframes shimmer { 0% { left: -100%; } 10% { left: 100%; } 100% { left: 100%; } }
+        
         .chart-glow { animation: pulseGlow 2s infinite ease-in-out; }
         .svg-animate { animation: pulseWholeGraph 2s infinite ease-in-out; }
         .dashed-outer { transform-origin: 80px 80px; animation: spin 30s linear infinite; }
         .text-pulse { animation: pulseText 2s infinite ease-in-out; }
         .status-icon-anim { animation: popIn 0.6s cubic-bezier(0.34, 1.56, 0.64, 1) 0.5s forwards, float 3s ease-in-out 1.1s infinite; transform: scale(0); }
-        .stat-shimmer::after { content: ''; position: absolute; top: 0; left: -100%; width: 50%; height: 100%; background: linear-gradient(to right, rgba(255,255,255,0) 0%, rgba(255,255,255,0.6) 50%, rgba(255,255,255,0) 100%); transform: skewX(-25deg); animation: shimmer 5s infinite; }
+        
         .no-effects .chart-glow { display: none; }
         .no-effects .svg-animate { animation: none !important; transform: rotate(-90deg) !important; }
         .no-effects .dashed-outer { animation: none !important; }
         .no-effects .text-pulse { animation: none !important; }
-        .stat-row-1 { opacity: 0; transform: translateY(10px); animation: slideUpFade 0.6s ease-out 0.7s forwards; }
-        .stat-row-2 { opacity: 0; transform: translateY(10px); animation: slideUpFade 0.6s ease-out 0.9s forwards; }
-        .label-appear { opacity: 0; transform: translateY(5px); animation: slideUpFade 0.5s ease-out 1.2s forwards; }
-        .footer-appear { opacity: 0; animation: slideUpFade 1s ease-out 1.5s forwards; }
+        
+        .stat-row-1 { opacity: 0; transform: translateY(10px); animation: slideUp 0.6s ease-out 0.7s forwards; }
+        .stat-row-2 { opacity: 0; transform: translateY(10px); animation: slideUp 0.6s ease-out 0.9s forwards; }
+        .label-appear { opacity: 0; transform: translateY(5px); animation: slideUp 0.5s ease-out 1.2s forwards; }
+        .footer-appear { opacity: 0; animation: slideUp 1s ease-out 1.5s forwards; }
       `}</style>
 
       {/* Header */}
@@ -342,7 +352,7 @@ const ManualEntry: React.FC<ManualEntryProps> = ({ onSave, onDelete, user, recor
       </button>
 
       {/* --- MESAČNÝ VÝKON CARD --- */}
-      <div className={`w-full rounded-[40px] p-[22px] shadow-[0_30px_60px_rgba(0,0,0,0.12)] relative overflow-hidden bg-white mb-8 transition-all duration-500 ${theme.noEffects ? 'no-effects' : ''}`}>
+      <div className={`w-full rounded-[40px] p-[22px] md:p-8 shadow-[0_30px_60px_rgba(0,0,0,0.12)] relative overflow-hidden bg-white mb-8 transition-all duration-500 ${theme.noEffects ? 'no-effects' : ''}`}>
           
           <div className="flex justify-between items-start mb-[20px] relative z-10">
               <div className="flex gap-[15px] items-center">
@@ -352,9 +362,9 @@ const ManualEntry: React.FC<ManualEntryProps> = ({ onSave, onDelete, user, recor
               <div className="px-[14px] py-[8px] rounded-[20px] text-[0.75rem] font-[800] uppercase shadow-[0_2px_8px_rgba(0,0,0,0.03)] border transition-all duration-500" style={{ borderColor: theme.lightBg, color: theme.primaryColor, backgroundColor: 'rgba(255,255,255,0.5)' }}>{dateBadgeText}</div>
           </div>
 
-          <div className="flex flex-row items-center justify-between gap-2 relative z-10">
+          <div className="flex flex-row items-center justify-between gap-2 md:gap-8 relative z-10 md:py-2">
               {/* Chart - Fixed width and height to prevent squashing on PC */}
-              <div className="relative w-[130px] h-[130px] flex-shrink-0 flex items-center justify-center -ml-2">
+              <div className="relative w-[130px] h-[130px] flex-shrink-0 flex items-center justify-center -ml-2 md:ml-0 md:mr-4 md:scale-105">
                   <div className="absolute w-full h-full rounded-full chart-glow transition-all duration-500" style={{ background: theme.glow }} />
                   {/* SVG must have preserveAspectRatio to avoid distortion */}
                   <svg width="130" height="130" viewBox="0 0 160 160" className="relative z-10 overflow-visible svg-animate" preserveAspectRatio="xMidYMid meet">
