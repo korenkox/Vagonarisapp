@@ -11,11 +11,13 @@ interface TeamViewProps {
   shiftConfig: ShiftConfig;
 }
 
+// Static definition to avoid re-creation on every render
+const TICKS = Array.from({ length: 60 }, (_, i) => i);
+
 const LiquidChart = ({ efficiency, balance, isPositiveBalance }: { efficiency: number, balance: number, isPositiveBalance: boolean }) => {
     const containerRef = useRef<HTMLDivElement>(null);
     const cardRef = useRef<HTMLDivElement>(null);
-    const [ticks, setTicks] = useState<number[]>(Array.from({ length: 60 }, (_, i) => i));
-
+    
     // Determine Theme based on Efficiency
     const theme = useMemo(() => {
         if (efficiency >= 100) {
@@ -45,29 +47,22 @@ const LiquidChart = ({ efficiency, balance, isPositiveBalance }: { efficiency: n
         }
     }, [efficiency]);
 
-    // 3D Tilt Effect - Optimized for Mobile (Disabled on Touch)
+    // 3D Tilt Effect - Optimized
     useEffect(() => {
         const container = containerRef.current;
         const card = cardRef.current;
-        
-        // Detect touch capability to save battery on mobile
-        const isTouchDevice = 'ontouchstart' in window || navigator.maxTouchPoints > 0;
+        const isTouchDevice = typeof window !== 'undefined' && ('ontouchstart' in window || navigator.maxTouchPoints > 0);
 
         if (!container || !card || isTouchDevice) return;
 
         const handleMouseMove = (e: React.MouseEvent<HTMLDivElement> | MouseEvent) => {
             const rect = container.getBoundingClientRect();
-            // Calculate relative to the element, handling potential scroll offsets
             const x = e.clientX - rect.left;
             const y = e.clientY - rect.top;
-            
             const centerX = rect.width / 2;
             const centerY = rect.height / 2;
-            
-            // Limit rotation to avoid extreme angles
             const rotateX = ((y - centerY) / centerY) * -15; 
             const rotateY = ((x - centerX) / centerX) * 15;
-
             card.style.transform = `rotateX(${rotateX}deg) rotateY(${rotateY}deg)`;
         };
 
@@ -77,132 +72,65 @@ const LiquidChart = ({ efficiency, balance, isPositiveBalance }: { efficiency: n
 
         container.addEventListener('mousemove', handleMouseMove);
         container.addEventListener('mouseleave', handleMouseLeave);
-
         return () => {
             container.removeEventListener('mousemove', handleMouseMove);
             container.removeEventListener('mouseleave', handleMouseLeave);
         };
     }, []);
 
-    // Calculate Tick Activity
-    const getTickClass = (index: number) => {
-        const totalTicks = 60;
-        const activeCount = Math.min(totalTicks, Math.floor((Math.min(efficiency, 100) / 100) * totalTicks));
-        return index < activeCount ? 'active' : '';
-    };
-
     const liquidHeight = Math.min(100, Math.max(5, efficiency));
+    const activeTickCount = Math.min(60, Math.floor((Math.min(efficiency, 100) / 100) * 60));
 
     return (
         <div className="relative flex items-center justify-center py-16 sm:py-20 w-full overflow-visible" style={{ perspective: '1200px' }}>
-            {/* Inject Styles specifically for this component */}
             <style>{`
                 @keyframes drift { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
                 @keyframes scan { 0% { transform: rotate(0deg); border-top-color: var(--lc-primary); } 50% { border-top-color: transparent; } 100% { transform: rotate(360deg); border-top-color: var(--lc-primary); } }
                 @keyframes gyro-x { 0% { transform: rotateX(0deg) rotateZ(0deg); } 100% { transform: rotateX(360deg) rotateZ(360deg); } }
                 @keyframes gyro-y { 0% { transform: rotateY(0deg) rotateZ(0deg); } 100% { transform: rotateY(360deg) rotateZ(-360deg); } }
-                
-                .lc-vars {
-                    --lc-primary: ${theme.primary};
-                    --lc-dark: ${theme.dark};
-                    --lc-glow: ${theme.glow};
-                    --lc-glow-dim: ${theme.glowDim};
-                }
-
+                .lc-vars { --lc-primary: ${theme.primary}; --lc-dark: ${theme.dark}; --lc-glow: ${theme.glow}; --lc-glow-dim: ${theme.glowDim}; }
                 .gyro-ring { position: absolute; inset: -40px; border-radius: 50%; border: 1px solid rgba(0,0,0,0.05); pointer-events: none; transition: all 0.5s ease; }
                 .gyro-1 { border-top: 2px solid var(--lc-primary); border-bottom: 2px solid var(--lc-primary); animation: gyro-x 12s linear infinite; box-shadow: 0 0 15px var(--lc-glow-dim); }
                 .gyro-2 { inset: -25px; border-left: 2px solid var(--lc-primary); border-right: 2px solid var(--lc-primary); animation: gyro-y 15s linear infinite; opacity: 0.4; }
                 .gyro-3 { inset: -55px; border: 1px dashed rgba(0,0,0,0.1); animation: drift 30s linear infinite; }
-                
                 .tech-tick { position: absolute; top: 0; left: 50%; width: 2px; height: 10px; background: #cbd5e1; transform-origin: 50% calc(140px + 15px); transition: background 0.3s, height 0.3s; }
                 .tech-tick.active { background: var(--lc-primary); box-shadow: 0 0 4px var(--lc-primary); height: 14px; }
-                
                 .wave { position: absolute; left: -50%; width: 200%; height: 200%; background-color: var(--lc-primary); border-radius: 40%; opacity: 0.9; }
                 .wave-back { bottom: 0; opacity: 0.4; border-radius: 42%; animation: drift 9s linear infinite; background-color: var(--lc-dark); }
                 .wave-front { bottom: 0; animation: drift 7s linear infinite reverse; }
             `}</style>
-
-            <div 
-                ref={containerRef}
-                className="relative lc-vars scale-[0.75] sm:scale-100 transition-transform duration-500" // Scaling down slightly for mobile safety
-                style={{ width: '280px', height: '280px' }}
-            >
-                 {/* Ambient Light */}
-                 <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[500px] h-[500px] rounded-full blur-[80px] opacity-20 pointer-events-none transition-colors duration-700"
-                      style={{ backgroundColor: theme.glow }} />
-
+            <div ref={containerRef} className="relative lc-vars scale-[0.75] sm:scale-100 transition-transform duration-500" style={{ width: '280px', height: '280px' }}>
+                 <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[500px] h-[500px] rounded-full blur-[80px] opacity-20 pointer-events-none transition-colors duration-700" style={{ backgroundColor: theme.glow }} />
                  <div ref={cardRef} className="relative w-full h-full flex items-center justify-center transition-transform duration-100 ease-out" style={{ transformStyle: 'preserve-3d' }}>
-                     
-                     {/* Gyro Rings & Tech Scale */}
                      <div className="absolute inset-0 z-0" style={{ transformStyle: 'preserve-3d' }}>
-                         <div className="gyro-ring gyro-3"></div>
-                         <div className="gyro-ring gyro-2"></div>
-                         <div className="gyro-ring gyro-1"></div>
-                         
-                         {/* Tech Scale */}
+                         <div className="gyro-ring gyro-3"></div><div className="gyro-ring gyro-2"></div><div className="gyro-ring gyro-1"></div>
                          <div className="absolute inset-[-15px] rounded-full animate-[drift_60s_linear_infinite_reverse]">
-                             {ticks.map((i) => (
-                                 <div 
-                                    key={i} 
-                                    className={`tech-tick ${getTickClass(i)}`} 
-                                    style={{ transform: `rotate(${i * (360 / 60)}deg)` }} 
-                                 />
+                             {TICKS.map((i) => (
+                                 <div key={i} className={`tech-tick ${i < activeTickCount ? 'active' : ''}`} style={{ transform: `rotate(${i * 6}deg)` }} />
                              ))}
                          </div>
-                         
-                         {/* Scanner */}
                          <div className="absolute inset-[-5px] rounded-full border-t-2 border-transparent border-l-transparent border-r-transparent animate-[scan_4s_linear_infinite] opacity-60 z-20"></div>
                      </div>
-
-                     {/* Main Liquid Sphere */}
                      <div className="relative w-full h-full rounded-full shadow-2xl z-10 bg-white border border-slate-100 overflow-hidden ring-4 ring-white">
-                         {/* Liquid */}
                          <div className="absolute top-0 left-0 right-0 bottom-0 rounded-full overflow-hidden transform-gpu">
-                             <div 
-                                className="absolute bottom-0 left-0 width-full w-full transition-all duration-700 ease-out" 
-                                style={{ height: `${liquidHeight}%` }}
-                             >
-                                 <div className="wave wave-back"></div>
-                                 <div className="wave wave-front"></div>
+                             <div className="absolute bottom-0 left-0 width-full w-full transition-all duration-700 ease-out" style={{ height: `${liquidHeight}%` }}>
+                                 <div className="wave wave-back"></div><div className="wave wave-front"></div>
                              </div>
                          </div>
-
-                         {/* Data Overlay */}
                          <div className="absolute inset-0 flex flex-col items-center justify-center z-20 pointer-events-none">
                              <div className="flex items-start drop-shadow-sm transform translate-y-2 mix-blend-multiply">
-                                 <span className="text-[4rem] font-bold tracking-tighter text-slate-800 leading-none">{efficiency}</span>
-                                 <span className="text-xl font-medium text-slate-400 mt-2 ml-1">%</span>
+                                 <span className="text-[4rem] font-bold tracking-tighter text-slate-800 leading-none">{efficiency}</span><span className="text-xl font-medium text-slate-400 mt-2 ml-1">%</span>
                              </div>
-                             <div className="text-[10px] font-bold tracking-[0.3em] uppercase mt-2 transition-colors duration-300" style={{ color: theme.primary }}>
-                                 ÚČINNOSŤ
-                             </div>
+                             <div className="text-[10px] font-bold tracking-[0.3em] uppercase mt-2 transition-colors duration-300" style={{ color: theme.primary }}>ÚČINNOSŤ</div>
                          </div>
-
-                         {/* Glass Reflection */}
                          <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_0%,rgba(255,255,255,0.8),transparent_70%)] pointer-events-none z-30"></div>
                      </div>
-
-                     {/* Floating Badge */}
                      <div className="absolute -bottom-14 z-50 w-full flex justify-center" style={{ transform: 'translateZ(60px)' }}>
-                         <div 
-                            className="px-6 py-3 rounded-xl shadow-lg flex items-center gap-4 transition-all duration-300 border-l-4 bg-white/90 backdrop-blur-md"
-                            style={{ borderColor: theme.primary }}
-                         >
-                             <div className="relative">
-                                 <div className="w-2 h-2 rounded-full animate-ping absolute top-0 right-0" style={{ backgroundColor: theme.primary }}></div>
-                                 <span className="text-xl" role="img" aria-label="icon">{theme.icon}</span>
-                             </div>
-                             <div className="flex flex-col">
-                                 <span className="text-slate-800 font-mono font-bold text-lg tracking-wide leading-none">
-                                     {isPositiveBalance ? '+' : ''}{balance.toFixed(1)}h
-                                 </span>
-                                 <span className="text-[9px] font-bold text-slate-400 uppercase tracking-widest mt-0.5">
-                                     {isPositiveBalance ? 'UŠETRENÉ' : 'NADČAS'}
-                                 </span>
-                             </div>
+                         <div className="px-6 py-3 rounded-xl shadow-lg flex items-center gap-4 transition-all duration-300 border-l-4 bg-white/90 backdrop-blur-md" style={{ borderColor: theme.primary }}>
+                             <div className="relative"><div className="w-2 h-2 rounded-full animate-ping absolute top-0 right-0" style={{ backgroundColor: theme.primary }}></div><span className="text-xl" role="img" aria-label="icon">{theme.icon}</span></div>
+                             <div className="flex flex-col"><span className="text-slate-800 font-mono font-bold text-lg tracking-wide leading-none">{isPositiveBalance ? '+' : ''}{balance.toFixed(1)}h</span><span className="text-[9px] font-bold text-slate-400 uppercase tracking-widest mt-0.5">{isPositiveBalance ? 'UŠETRENÉ' : 'NADČAS'}</span></div>
                          </div>
                      </div>
-
                  </div>
             </div>
         </div>
@@ -325,35 +253,14 @@ const TeamView: React.FC<TeamViewProps> = ({ user, records, shiftConfig }) => {
   useEffect(() => {
       const syncStats = async () => {
           if (!currentUserId) return;
-
-          // Prepare the payload
-          const payload = {
-              worked_hours: myStats.worked,
-              norm_hours: myStats.norm,
-              calendar_fund: myStats.calendarFund,
-              user_name: user.name,
-              initials: user.name?.[0] || '?'
-          };
-
-          // Create a signature to compare
+          const payload = { worked_hours: myStats.worked, norm_hours: myStats.norm, calendar_fund: myStats.calendarFund, user_name: user.name, initials: user.name?.[0] || '?' };
           const payloadSignature = JSON.stringify(payload);
-
-          // If nothing changed since last sync, skip the DB call
           if (lastSyncedStatsRef.current === payloadSignature) return;
-
           try {
-              await supabase.from('group_members')
-                  .update(payload)
-                  .eq('user_id', currentUserId);
-              
-              // Update the ref only on success
+              await supabase.from('group_members').update(payload).eq('user_id', currentUserId);
               lastSyncedStatsRef.current = payloadSignature;
-          } catch (err) {
-              console.error('Error syncing stats:', err);
-          }
+          } catch (err) { console.error('Error syncing stats:', err); }
       };
-
-      // Debounce the sync
       const timer = setTimeout(() => { syncStats(); }, 2000);
       return () => clearTimeout(timer);
   }, [myStats, currentUserId, user.name]);
