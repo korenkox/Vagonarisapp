@@ -5,8 +5,6 @@ import { Plus, ArrowLeft, Zap, Crown, UserMinus, Settings, Power, Activity, Lock
 import { Group, AttendanceRecord, ShiftConfig, User, GroupMember } from '../types';
 import { supabase } from '../supabaseClient';
 
-// ... (LiquidChart and TeamView component code remains mostly the same until the render) ...
-
 interface TeamViewProps {
   user: User;
   records: AttendanceRecord[];
@@ -47,11 +45,15 @@ const LiquidChart = ({ efficiency, balance, isPositiveBalance }: { efficiency: n
         }
     }, [efficiency]);
 
-    // 3D Tilt Effect
+    // 3D Tilt Effect - Optimized for Mobile (Disabled on Touch)
     useEffect(() => {
         const container = containerRef.current;
         const card = cardRef.current;
-        if (!container || !card) return;
+        
+        // Detect touch capability to save battery on mobile
+        const isTouchDevice = 'ontouchstart' in window || navigator.maxTouchPoints > 0;
+
+        if (!container || !card || isTouchDevice) return;
 
         const handleMouseMove = (e: React.MouseEvent<HTMLDivElement> | MouseEvent) => {
             const rect = container.getBoundingClientRect();
@@ -92,7 +94,7 @@ const LiquidChart = ({ efficiency, balance, isPositiveBalance }: { efficiency: n
     const liquidHeight = Math.min(100, Math.max(5, efficiency));
 
     return (
-        <div className="relative flex items-center justify-center py-6 w-full overflow-visible" style={{ perspective: '1200px' }}>
+        <div className="relative flex items-center justify-center py-16 sm:py-20 w-full overflow-visible" style={{ perspective: '1200px' }}>
             {/* Inject Styles specifically for this component */}
             <style>{`
                 @keyframes drift { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
@@ -122,7 +124,7 @@ const LiquidChart = ({ efficiency, balance, isPositiveBalance }: { efficiency: n
 
             <div 
                 ref={containerRef}
-                className="relative lc-vars scale-[0.85] sm:scale-100" // Scaling down slightly for mobile safety
+                className="relative lc-vars scale-[0.75] sm:scale-100 transition-transform duration-500" // Scaling down slightly for mobile safety
                 style={{ width: '280px', height: '280px' }}
             >
                  {/* Ambient Light */}
@@ -317,11 +319,41 @@ const TeamView: React.FC<TeamViewProps> = ({ user, records, shiftConfig }) => {
 
   useEffect(() => { fetchGroups(true); }, [fetchGroups]);
 
+  // Ref to store the last successfully synced stats string to avoid duplicate calls
+  const lastSyncedStatsRef = useRef<string>("");
+
   useEffect(() => {
       const syncStats = async () => {
           if (!currentUserId) return;
-          try { await supabase.from('group_members').update({ worked_hours: myStats.worked, norm_hours: myStats.norm, calendar_fund: myStats.calendarFund, user_name: user.name, initials: user.name?.[0] || '?' }).eq('user_id', currentUserId); } catch (err) { console.error('Error syncing stats:', err); }
+
+          // Prepare the payload
+          const payload = {
+              worked_hours: myStats.worked,
+              norm_hours: myStats.norm,
+              calendar_fund: myStats.calendarFund,
+              user_name: user.name,
+              initials: user.name?.[0] || '?'
+          };
+
+          // Create a signature to compare
+          const payloadSignature = JSON.stringify(payload);
+
+          // If nothing changed since last sync, skip the DB call
+          if (lastSyncedStatsRef.current === payloadSignature) return;
+
+          try {
+              await supabase.from('group_members')
+                  .update(payload)
+                  .eq('user_id', currentUserId);
+              
+              // Update the ref only on success
+              lastSyncedStatsRef.current = payloadSignature;
+          } catch (err) {
+              console.error('Error syncing stats:', err);
+          }
       };
+
+      // Debounce the sync
       const timer = setTimeout(() => { syncStats(); }, 2000);
       return () => clearTimeout(timer);
   }, [myStats, currentUserId, user.name]);
@@ -449,6 +481,69 @@ const TeamView: React.FC<TeamViewProps> = ({ user, records, shiftConfig }) => {
   );
 };
 
+const InviteModal = ({ code, onClose }: { code: string, onClose: () => void }) => {
+    const [copied, setCopied] = useState(false);
+    
+    const handleCopy = () => {
+        navigator.clipboard.writeText(code);
+        setCopied(true);
+        setTimeout(() => setCopied(false), 2000);
+    };
+
+    return createPortal(
+        <div className="fixed inset-0 z-[2000] flex items-center justify-center p-4">
+             <div className="absolute inset-0 bg-gray-900/60 backdrop-blur-sm transition-opacity animate-fade-in" onClick={onClose} />
+             <div className="bg-white w-full max-w-sm rounded-[32px] p-6 z-10 shadow-2xl transform transition-transform animate-scale-in mx-auto relative overflow-hidden">
+                 <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-blue-400 to-indigo-600" />
+                 <div className="flex justify-between items-start mb-6">
+                    <div>
+                        <h3 className="text-xl font-bold text-gray-900">Pozvať člena</h3>
+                        <p className="text-gray-400 text-xs mt-1 font-bold uppercase tracking-wider">Pošlite tento kód kolegovi</p>
+                    </div>
+                    <button onClick={onClose} className="p-2 bg-gray-50 rounded-full hover:bg-gray-100 transition-colors"><X size={20} className="text-gray-500" /></button>
+                 </div>
+                 
+                 <div className="bg-gray-50 rounded-2xl p-6 text-center mb-6 relative group cursor-pointer border border-dashed border-gray-300 hover:border-blue-400 transition-colors" onClick={handleCopy}>
+                     <div className="text-4xl font-mono font-bold text-gray-800 tracking-widest">{code}</div>
+                     {copied && (
+                         <div className="absolute inset-0 bg-white/90 flex items-center justify-center rounded-2xl animate-fade-in backdrop-blur-sm">
+                             <div className="flex items-center gap-2 text-green-600 font-bold"><CheckCircle size={20} /> Skopírované!</div>
+                         </div>
+                     )}
+                 </div>
+
+                 <button onClick={handleCopy} className="w-full py-4 bg-gray-900 text-white rounded-2xl font-bold shadow-lg shadow-gray-900/20 active:scale-[0.98] transition-all flex items-center justify-center gap-2">
+                     <Copy size={20} /> Kopírovať kód
+                 </button>
+             </div>
+        </div>, document.body
+    );
+};
+
+const MemberActionSheet = ({ isOpen, member, onClose, onRemove }: { isOpen: boolean, member: GroupMember | null, onClose: () => void, onRemove: () => void }) => {
+    if (!isOpen || !member) return null;
+    return createPortal(
+        <div className="fixed inset-0 z-[2000] flex items-end justify-center sm:items-center p-0 sm:p-4 pointer-events-none">
+             <div className="absolute inset-0 bg-gray-900/40 backdrop-blur-sm transition-opacity animate-fade-in pointer-events-auto" onClick={onClose} />
+             <div className="bg-white w-full max-w-sm rounded-t-[32px] sm:rounded-[32px] p-6 pb-8 z-10 shadow-2xl transform transition-transform animate-slide-up mx-auto mb-0 sm:mb-auto pointer-events-auto">
+                 <div className="flex justify-center mb-6"><div className="w-12 h-1.5 bg-gray-200 rounded-full" /></div>
+                 <div className="flex items-center gap-4 mb-8">
+                     <div className={`w-16 h-16 rounded-2xl flex items-center justify-center font-bold text-white text-2xl shadow-lg ${member.role === 'Admin' ? 'bg-gradient-to-br from-amber-400 to-orange-500' : 'bg-gradient-to-br from-slate-400 to-slate-600'}`}>{member.initials}</div>
+                     <div><h3 className="text-lg font-bold text-gray-900">{member.name}</h3><div className="text-sm text-gray-500 font-medium">Správa člena tímu</div></div>
+                 </div>
+                 
+                 <div className="space-y-3">
+                    <button onClick={onRemove} className="w-full p-4 flex items-center gap-4 rounded-2xl bg-rose-50 text-rose-600 hover:bg-rose-100 transition-colors group border border-rose-100">
+                        <div className="w-10 h-10 rounded-full bg-white flex items-center justify-center shadow-sm text-rose-500 group-hover:scale-110 transition-transform"><UserMinus size={20} /></div>
+                        <div className="text-left"><span className="block font-bold">Odstrániť zo skupiny</span><span className="text-xs opacity-70">Táto akcia je nevratná</span></div>
+                    </button>
+                    <button onClick={onClose} className="w-full py-4 text-gray-500 font-bold hover:text-gray-900 transition-colors bg-gray-50 rounded-2xl">Zrušiť</button>
+                 </div>
+             </div>
+        </div>, document.body
+    );
+};
+
 const MemberDetailModal = ({ isOpen, member, onClose }: { isOpen: boolean, member: GroupMember | null, onClose: () => void }) => {
     if (!isOpen || !member) return null;
     const efficiency = member.workedHours > 0 ? Math.round((member.normHours / member.workedHours) * 100) : 0;
@@ -476,42 +571,6 @@ const MemberDetailModal = ({ isOpen, member, onClose }: { isOpen: boolean, membe
                     <div className="grid grid-cols-2 gap-3"><div className="bg-white border border-gray-100 rounded-2xl py-3 flex flex-col items-center justify-center"><span className="text-[9px] font-bold text-gray-400 uppercase mb-1">NH</span><span className="text-lg font-black text-gray-800">{member.normHours}h</span></div><div className="bg-white border border-gray-100 rounded-2xl py-3 flex flex-col items-center justify-center"><span className="text-[9px] font-bold text-gray-400 uppercase mb-1">FOND</span><span className="text-lg font-black text-gray-800">{member.calendarFund || 0}h</span></div></div>
                  </div>
                  <button onClick={onClose} className="w-full mt-6 py-4 bg-gray-900 text-white rounded-2xl font-bold shadow-lg shadow-gray-900/20 active:scale-[0.98] transition-all">Zavrieť</button>
-             </div>
-        </div>, document.body
-    );
-};
-
-const InviteModal = ({ code, onClose }: { code: string, onClose: () => void }) => {
-    const [copied, setCopied] = useState(false);
-    const handleCopy = () => { navigator.clipboard.writeText(code); setCopied(true); setTimeout(() => setCopied(false), 2000); };
-    return createPortal(
-        <div className="fixed inset-0 z-[60] flex items-center justify-center p-6">
-            <div className="absolute inset-0 bg-gray-900/60 backdrop-blur-sm animate-fade-in" onClick={onClose} />
-            <div className="bg-white rounded-[32px] p-8 w-full max-w-sm relative z-10 shadow-2xl animate-scale-in">
-                <div className="flex flex-col items-center text-center">
-                    <div className="w-16 h-16 bg-blue-50 text-blue-500 rounded-2xl flex items-center justify-center mb-4"><Share2 size={32} /></div>
-                    <h3 className="text-xl font-bold text-gray-900 mb-2">Pozvať kolegov</h3>
-                    <p className="text-sm text-gray-500 mb-6">Zdieľajte tento kód s kolegami. Po zadaní kódu budú automaticky pridaní do skupiny.</p>
-                    <div className="w-full bg-gray-50 rounded-2xl p-4 border border-blue-100 flex items-center justify-between mb-6 group cursor-pointer" onClick={handleCopy}><div className="font-mono text-2xl font-bold text-gray-800 tracking-wider">{code}</div><button className="text-gray-400 group-hover:text-blue-500 transition-colors">{copied ? <CheckCircle size={24} className="text-emerald-500" /> : <Copy size={24} />}</button></div>
-                    <button onClick={onClose} className="w-full py-3 bg-gray-900 text-white rounded-xl font-bold">Hotovo</button>
-                </div>
-            </div>
-        </div>, document.body
-    );
-};
-
-const MemberActionSheet = ({ isOpen, member, onClose, onRemove }: { isOpen: boolean, member: GroupMember | null, onClose: () => void, onRemove: () => void }) => {
-    if (!isOpen || !member) return null;
-    return createPortal(
-        <div className="fixed inset-0 z-[9999] flex items-end justify-center sm:items-center">
-             <div className="absolute inset-0 bg-gray-900/40 backdrop-blur-sm transition-opacity animate-fade-in" onClick={onClose} />
-             <div className="bg-white w-full max-w-sm rounded-t-[32px] sm:rounded-[32px] p-6 pb-8 z-10 shadow-2xl transform transition-transform animate-slide-up mx-auto mb-0 sm:mb-auto">
-                 <div className="flex justify-center mb-6"><div className="w-12 h-1.5 bg-gray-200 rounded-full" /></div>
-                 <div className="flex items-center gap-4 mb-8"><div className="w-16 h-16 rounded-2xl bg-gray-100 flex items-center justify-center font-bold text-gray-500 text-2xl">{member.initials}</div><div><h3 className="text-xl font-bold text-gray-900">{member.name}</h3><div className="text-sm text-gray-500">{member.role}</div></div></div>
-                 <div className="space-y-3">
-                    <button onClick={onRemove} className="w-full p-4 flex items-center gap-4 rounded-2xl bg-rose-50 text-rose-600 hover:bg-rose-100 transition-colors group"><div className="w-10 h-10 rounded-full bg-white flex items-center justify-center shadow-sm text-rose-500 group-hover:scale-110 transition-transform"><Trash2 size={20} /></div><div className="text-left"><span className="block font-bold">Odstrániť zo skupiny</span><span className="text-xs opacity-70">Akcia je nevratná</span></div></button>
-                    <button onClick={onClose} className="w-full py-4 text-gray-500 font-bold hover:text-gray-900 transition-colors">Zrušiť</button>
-                 </div>
              </div>
         </div>, document.body
     );
