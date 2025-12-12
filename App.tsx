@@ -51,7 +51,6 @@ const App: React.FC = () => {
   });
 
   // --- 2. DATA FETCHING (Supabase) ---
-  // Defined BEFORE useEffect to avoid reference errors
   const fetchRecords = useCallback(async (userId: string) => {
       try {
           const { data, error } = await supabase
@@ -63,7 +62,6 @@ const App: React.FC = () => {
           if (error) throw error;
           
           if (data) {
-              // Map database fields to app type if snake_case -> camelCase differs
               const mappedRecords: AttendanceRecord[] = data.map(r => ({
                   id: r.id,
                   date: r.date,
@@ -78,7 +76,6 @@ const App: React.FC = () => {
               setRecords(mappedRecords);
           }
       } catch (err: any) {
-          // Log detailed error message
           const errorMessage = err.message || JSON.stringify(err, null, 2);
           console.error('Error fetching records details:', errorMessage);
           
@@ -87,8 +84,6 @@ const App: React.FC = () => {
                  title: 'Chýba databáza',
                  message: 'Tabuľka "attendance_records" neexistuje. Prosím, vytvorte ju v Supabase SQL Editore.'
              });
-          } else {
-             console.warn('Unknown error fetching records', err);
           }
       }
   }, []);
@@ -101,15 +96,10 @@ const App: React.FC = () => {
               .eq('user_id', userId)
               .single();
 
-          if (error && error.code !== 'PGRST116') { // PGRST116 is "Row not found", which is fine for new users
-               console.error('Error fetching settings:', error);
-          }
-
           if (data && data.shift_config) {
               setShiftConfig(data.shift_config);
               isConfigLoadedFromDb.current = true;
           } else {
-              // If no settings on server, we mark as loaded so the local default can be saved to server later
               isConfigLoadedFromDb.current = true;
           }
       } catch (err) {
@@ -119,7 +109,6 @@ const App: React.FC = () => {
 
   // --- 1. SESSION MANAGEMENT ---
   useEffect(() => {
-    // Check active session on load
     supabase.auth.getSession().then(({ data: { session } }) => {
       if (session) {
         setUser({ 
@@ -132,10 +121,7 @@ const App: React.FC = () => {
       }
     });
 
-    // Listen for auth changes (Login, Logout, Auto-refresh)
-    const {
-      data: { subscription },
-    } = supabase.auth.onAuthStateChange((_event, session) => {
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
       if (session) {
         setUser({ 
             email: session.user.email!, 
@@ -147,7 +133,7 @@ const App: React.FC = () => {
       } else {
         setUser(null);
         setCurrentView(AppView.INTRO);
-        setRecords([]); // Clear sensitive data
+        setRecords([]);
         isConfigLoadedFromDb.current = false;
       }
     });
@@ -164,19 +150,14 @@ const App: React.FC = () => {
     await supabase.auth.signOut();
   };
 
-  // --- 3. DATA SAVING & DELETING (Supabase) ---
+  // --- 3. DATA SAVING & DELETING ---
   const addRecord = async (record: AttendanceRecord) => {
-      // Optimistic update (show immediately)
       setRecords(prev => [record, ...prev]);
-
       try {
           const { data: { user } } = await supabase.auth.getUser();
           if (!user) return;
 
-          // Insert into DB
-          const { error } = await supabase
-            .from('attendance_records')
-            .insert({
+          await supabase.from('attendance_records').insert({
                 user_id: user.id,
                 date: record.date,
                 arrival_time: record.arrivalTime,
@@ -187,120 +168,96 @@ const App: React.FC = () => {
                 balance: record.balance,
                 is_positive_balance: record.isPositiveBalance
             });
-
-          if (error) {
-              console.error('Error saving record:', error.message);
-              // alert(`Chyba pri ukladaní: ${error.message}`);
-          }
       } catch (err: any) {
           console.error('Async error:', err);
       }
   };
 
   const deleteRecord = async (recordId: string) => {
-    // 1. Optimistic update (remove immediately from UI)
     const previousRecords = [...records];
     setRecords(prev => prev.filter(r => r.id !== recordId));
 
     try {
-        // 2. Delete from DB
-        const { error } = await supabase
-            .from('attendance_records')
-            .delete()
-            .eq('id', recordId);
-
+        const { error } = await supabase.from('attendance_records').delete().eq('id', recordId);
         if (error) throw error;
-        
     } catch (err: any) {
-        const msg = err.message || JSON.stringify(err);
-        console.error('Error deleting record:', msg);
-        alert('Nepodarilo sa vymazať záznam. Skontrolujte pripojenie.');
-        // Revert on error
+        console.error('Error deleting record:', err);
+        alert('Nepodarilo sa vymazať záznam.');
         setRecords(previousRecords);
     }
   };
 
   // --- 4. CONFIG SYNC ---
-  // Sync config to LocalStorage AND Supabase when changed
   useEffect(() => {
-    // Always save to local storage for offline backup
     localStorage.setItem('shift_config', JSON.stringify(shiftConfig));
-
-    // Debounce save to Supabase to prevent spamming DB on rapid changes
     const saveToCloud = setTimeout(async () => {
         if (!user || !isConfigLoadedFromDb.current) return;
-        
         try {
-            const { error } = await supabase
-                .from('user_settings')
-                .upsert({
+            await supabase.from('user_settings').upsert({
                     user_id: (await supabase.auth.getUser()).data.user?.id,
                     shift_config: shiftConfig,
                     updated_at: new Date().toISOString()
                 }, { onConflict: 'user_id' });
-            
-            if (error) console.error('Error syncing settings:', error);
         } catch (err) {
             console.error('Async settings save error:', err);
         }
-    }, 1000); // 1 second debounce
-
+    }, 1000);
     return () => clearTimeout(saveToCloud);
   }, [shiftConfig, user]);
 
   return (
-    <div className="min-h-screen w-full relative overflow-hidden bg-white">
-      {/* Global Error Toast */}
-      {globalError && (
-          <div className="fixed top-0 left-0 right-0 z-[9999] p-4 animate-fade-in-down">
-              <div className="max-w-md mx-auto bg-rose-50 border border-rose-100 shadow-xl rounded-2xl p-4 flex items-start gap-3">
-                  <div className="p-2 bg-rose-100 rounded-full text-rose-600">
-                      <AlertTriangle size={20} />
+    // Reverted to simple container without phone frame
+    <div className="min-h-screen bg-white sm:bg-gray-50 flex justify-center">
+        
+        <div className="w-full max-w-md bg-white min-h-screen shadow-2xl relative">
+              
+              {globalError && (
+                  <div className="fixed top-0 left-0 right-0 z-[9999] p-4 flex justify-center pointer-events-none animate-fade-in-down">
+                      <div className="bg-rose-50 border border-rose-100 shadow-xl rounded-2xl p-4 flex items-start gap-3 max-w-sm w-full pointer-events-auto">
+                          <div className="p-2 bg-rose-100 rounded-full text-rose-600"><AlertTriangle size={20} /></div>
+                          <div className="flex-1">
+                              <h3 className="text-sm font-bold text-gray-900">{globalError.title}</h3>
+                              <p className="text-xs text-gray-600 mt-1">{globalError.message}</p>
+                          </div>
+                          <button onClick={() => setGlobalError(null)} className="text-gray-400 hover:text-gray-600"><X size={18} /></button>
+                      </div>
                   </div>
-                  <div className="flex-1">
-                      <h3 className="text-sm font-bold text-gray-900">{globalError.title}</h3>
-                      <p className="text-xs text-gray-600 mt-1">{globalError.message}</p>
-                  </div>
-                  <button onClick={() => setGlobalError(null)} className="text-gray-400 hover:text-gray-600">
-                      <X size={18} />
-                  </button>
-              </div>
+              )}
+
+              {currentView === AppView.INTRO && (
+                <WelcomeScreen onNavigate={handleNavigateToAuth} />
+              )}
+
+              {currentView === AppView.AUTH && (
+                <Auth 
+                    onLoginSuccess={() => {}} 
+                    initialMode={authMode} 
+                    onBack={() => setCurrentView(AppView.INTRO)}
+                />
+              )}
+              
+              {currentView === AppView.DASHBOARD && user && (
+                <Dashboard 
+                  user={user} 
+                  onLogout={handleLogout}
+                  records={records}
+                  onAddRecord={addRecord}
+                  onDeleteRecord={deleteRecord}
+                  shiftConfig={shiftConfig}
+                  onUpdateShiftConfig={setShiftConfig}
+                />
+              )}
           </div>
-      )}
-
-      {currentView === AppView.INTRO && (
-        <WelcomeScreen onNavigate={handleNavigateToAuth} />
-      )}
-
-      {currentView === AppView.AUTH && (
-        <Auth 
-            onLoginSuccess={() => { /* Handled by listener */ }} 
-            initialMode={authMode} 
-            onBack={() => setCurrentView(AppView.INTRO)}
-        />
-      )}
-      
-      {currentView === AppView.DASHBOARD && user && (
-        <Dashboard 
-          user={user} 
-          onLogout={handleLogout}
-          records={records}
-          onAddRecord={addRecord}
-          onDeleteRecord={deleteRecord}
-          shiftConfig={shiftConfig}
-          onUpdateShiftConfig={setShiftConfig}
-        />
-      )}
-      
-      <style>{`
-        @keyframes fadeInDown {
-            from { opacity: 0; transform: translateY(-20px); }
-            to { opacity: 1; transform: translateY(0); }
-        }
-        .animate-fade-in-down {
-            animation: fadeInDown 0.5s ease-out forwards;
-        }
-      `}</style>
+          
+          <style>{`
+            @keyframes fadeInDown {
+                from { opacity: 0; transform: translateY(-20px); }
+                to { opacity: 1; transform: translateY(0); }
+            }
+            .animate-fade-in-down {
+                animation: fadeInDown 0.5s ease-out forwards;
+            }
+          `}</style>
     </div>
   );
 };
