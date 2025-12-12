@@ -18,8 +18,8 @@ const SHIFT_STYLES: Record<string, { bg: string, text: string, glow: string, bor
 };
 
 const MonthOverview: React.FC<MonthOverviewProps> = ({ config, onUpdateConfig, records }) => {
-  const [currentDate, setCurrentDate] = useState(new Date(2025, 11, 1)); // Fixed Dec 2025 as per screenshot
-  const [selectedDay, setSelectedDay] = useState<number>(8);
+  const [currentDate, setCurrentDate] = useState(new Date()); 
+  const [selectedDay, setSelectedDay] = useState<number>(new Date().getDate());
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
 
   const year = currentDate.getFullYear();
@@ -193,12 +193,6 @@ const MonthOverview: React.FC<MonthOverviewProps> = ({ config, onUpdateConfig, r
       <ShiftSettingsSheet isOpen={isSettingsOpen} onClose={() => setIsSettingsOpen(false)} config={config} onSave={onUpdateConfig} />
       <style>{`
         .perspective-500 { perspective: 500px; }
-        .animate-slide-up { animation: slideUp 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards; }
-        .animate-fade-in { animation: fadeIn 0.3s ease-out forwards; }
-        @keyframes slideUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
-        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
-        @keyframes scaleIn { from { transform: scale(0); opacity: 0; } to { transform: scale(1); opacity: 1; } }
-        .animate-scale-in { animation: scaleIn 0.3s cubic-bezier(0.34, 1.56, 0.64, 1) forwards; }
       `}</style>
     </div>
   );
@@ -289,12 +283,6 @@ const ShiftSettingsSheet = ({ isOpen, onClose, config, onSave }: any) => {
                  </div>
             </div>
             <DatePickerSheet isOpen={isDatePickerOpen} onClose={() => setIsDatePickerOpen(false)} selectedDate={startDate ? new Date(startDate) : new Date()} onSelect={handleDateSelect} />
-            <style>{`
-                @keyframes sheetUp { from { transform: translateY(100%); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
-                .animate-sheet-up { animation: sheetUp 0.5s cubic-bezier(0.19, 1, 0.22, 1) forwards; }
-                @keyframes fadeInUp { from { transform: translateY(20px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
-                .animate-fade-in-up { animation: fadeInUp 0.6s cubic-bezier(0.16, 1, 0.3, 1) forwards; opacity: 0; }
-            `}</style>
         </div>, document.body
     );
 };
