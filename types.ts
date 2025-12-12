@@ -61,3 +61,5 @@ export interface Group {
   efficiency: number;
   totalCalendarFund?: number;
 }
+
+export type NotifyFn = (type: 'success' | 'error' | 'info', text: string) => void;

@@ -1,6 +1,6 @@
 
 import React, { useState, Suspense } from 'react';
-import { User, AttendanceRecord, ShiftConfig, DashboardTab } from '../types';
+import { User, AttendanceRecord, ShiftConfig, DashboardTab, NotifyFn } from '../types';
 import { Home, Calendar, Users, User as UserIcon, Activity, LogOut, Loader2 } from 'lucide-react';
 import { useIsMobile } from '../hooks/useIsMobile';
 
@@ -18,6 +18,7 @@ interface DashboardProps {
   onDeleteRecord: (id: string) => void;
   shiftConfig: ShiftConfig;
   onUpdateShiftConfig: (config: ShiftConfig) => void;
+  notify: NotifyFn;
 }
 
 const LoadingSpinner = () => (
@@ -33,7 +34,8 @@ const Dashboard: React.FC<DashboardProps> = ({
   onAddRecord,
   onDeleteRecord,
   shiftConfig,
-  onUpdateShiftConfig
+  onUpdateShiftConfig,
+  notify
 }) => {
   const [activeTab, setActiveTab] = useState<DashboardTab>('HOME');
   const isMobile = useIsMobile();
@@ -148,9 +150,7 @@ const Dashboard: React.FC<DashboardProps> = ({
         )}
 
         {/* --- MAIN CONTENT --- */}
-        {/* On Desktop, add margin-left to make space for sidebar */}
         <main className={`flex-1 flex flex-col transition-all duration-300 ${!isMobile ? 'ml-72' : 'pb-24'}`}>
-            {/* On Desktop, wrap content in a container to prevent it from being too wide */}
             <div className={`w-full ${!isMobile ? 'max-w-5xl mx-auto p-8' : ''}`}>
                  {renderContent()}
             </div>
@@ -158,7 +158,6 @@ const Dashboard: React.FC<DashboardProps> = ({
 
       </div>
 
-      {/* --- MOBILE BOTTOM NAV (Visible only if isMobile) --- */}
       {isMobile && (
         <div className="fixed bottom-0 left-0 right-0 z-50 flex justify-center pointer-events-none">
             <div className="w-full max-w-md bg-white/90 backdrop-blur-xl border-t border-white/50 shadow-[0_-10px_40px_-15px_rgba(0,0,0,0.1)] rounded-t-[32px] px-6 pb-5 pt-2 flex justify-between items-center transition-all duration-300 pointer-events-auto">

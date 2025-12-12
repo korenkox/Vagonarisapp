@@ -1,10 +1,9 @@
 
 import { useState, useEffect } from 'react';
 
-const MOBILE_BREAKPOINT = 768; // Tailwind 'md' breakpoint
+const MOBILE_BREAKPOINT = 768;
 
 export const useIsMobile = () => {
-  // Initialize with correct value if window exists, otherwise default to true (mobile-first)
   const [isMobile, setIsMobile] = useState<boolean>(() => {
     if (typeof window !== 'undefined') {
       return window.innerWidth < MOBILE_BREAKPOINT;
@@ -16,17 +15,10 @@ export const useIsMobile = () => {
     if (typeof window === 'undefined') return;
 
     const handleResize = () => {
-      const mobile = window.innerWidth < MOBILE_BREAKPOINT;
-      setIsMobile(mobile);
+      setIsMobile(window.innerWidth < MOBILE_BREAKPOINT);
     };
 
-    // Add event listener
     window.addEventListener('resize', handleResize);
-    
-    // Initial check (in case of orientation change etc.)
-    handleResize();
-
-    // Cleanup
     return () => window.removeEventListener('resize', handleResize);
   }, []);
 

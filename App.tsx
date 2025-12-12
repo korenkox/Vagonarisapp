@@ -1,21 +1,35 @@
 
 import React, { useState, useEffect, useCallback, useRef } from 'react';
-import { AppView, User, AttendanceRecord, ShiftConfig } from './types';
+import { AppView, User, AttendanceRecord, ShiftConfig, NotifyFn } from './types';
 import Auth from './components/Auth';
 import Dashboard from './components/Dashboard';
 import WelcomeScreen from './components/WelcomeScreen';
+import Toast, { ToastMessage } from './components/Toast';
 import { supabase } from './supabaseClient';
-import { AlertTriangle, X, WifiOff } from 'lucide-react';
+import { WifiOff } from 'lucide-react';
 
 const App: React.FC = () => {
   const [currentView, setCurrentView] = useState<AppView>(AppView.INTRO);
   const [user, setUser] = useState<User | null>(null);
   const [authMode, setAuthMode] = useState<'login' | 'register'>('login');
   const [records, setRecords] = useState<AttendanceRecord[]>([]);
-  const [globalError, setGlobalError] = useState<{title: string, message: string} | null>(null);
   const [isOffline, setIsOffline] = useState(!navigator.onLine);
   
+  // Toast State
+  const [toasts, setToasts] = useState<ToastMessage[]>([]);
   const isConfigLoadedFromDb = useRef(false);
+
+  const notify: NotifyFn = useCallback((type, text) => {
+    const id = crypto.randomUUID();
+    setToasts(prev => [...prev, { id, type, text }]);
+    setTimeout(() => {
+        setToasts(prev => prev.filter(t => t.id !== id));
+    }, 4000);
+  }, []);
+
+  const removeToast = (id: string) => {
+      setToasts(prev => prev.filter(t => t.id !== id));
+  };
 
   const [shiftConfig, setShiftConfig] = useState<ShiftConfig>(() => {
     try {
@@ -37,15 +51,15 @@ const App: React.FC = () => {
 
   // Offline detection
   useEffect(() => {
-    const handleOnline = () => setIsOffline(false);
-    const handleOffline = () => setIsOffline(true);
+    const handleOnline = () => { setIsOffline(false); notify('success', 'Ste opäť online'); };
+    const handleOffline = () => { setIsOffline(true); notify('info', 'Režim offline'); };
     window.addEventListener('online', handleOnline);
     window.addEventListener('offline', handleOffline);
     return () => {
       window.removeEventListener('online', handleOnline);
       window.removeEventListener('offline', handleOffline);
     };
-  }, []);
+  }, [notify]);
 
   const fetchRecords = useCallback(async (userId: string) => {
       try {
@@ -65,9 +79,7 @@ const App: React.FC = () => {
               })));
           }
       } catch (err: any) {
-          if (err.code === '42P01') {
-             setGlobalError({ title: 'Chýba databáza', message: 'Tabuľka "attendance_records" neexistuje.' });
-          }
+          console.error(err);
       }
   }, []);
 
@@ -115,10 +127,14 @@ const App: React.FC = () => {
       setCurrentView(AppView.AUTH);
   };
 
-  const handleLogout = async () => { await supabase.auth.signOut(); };
+  const handleLogout = async () => { 
+      await supabase.auth.signOut(); 
+      notify('success', 'Odhlásenie úspešné');
+  };
 
   const addRecord = async (record: AttendanceRecord) => {
       setRecords(prev => [record, ...prev]);
+      notify('success', 'Záznam bol uložený');
       try {
           const { data: { user } } = await supabase.auth.getUser();
           if (!user) return;
@@ -133,17 +149,22 @@ const App: React.FC = () => {
                 balance: record.balance,
                 is_positive_balance: record.isPositiveBalance
             });
-      } catch (err) { console.error(err); }
+      } catch (err) { 
+          notify('error', 'Nepodarilo sa synchronizovať záznam');
+          console.error(err); 
+      }
   };
 
   const deleteRecord = async (recordId: string) => {
     const previousRecords = [...records];
     setRecords(prev => prev.filter(r => r.id !== recordId));
+    notify('info', 'Záznam odstránený');
     try {
         const { error } = await supabase.from('attendance_records').delete().eq('id', recordId);
         if (error) throw error;
     } catch (err) {
         setRecords(previousRecords);
+        notify('error', 'Chyba pri mazaní');
     }
   };
 
@@ -166,6 +187,8 @@ const App: React.FC = () => {
     <div className="min-h-screen bg-white sm:bg-gray-50 flex justify-center">
         <div className="w-full max-w-md bg-white min-h-screen shadow-2xl relative">
               
+              <Toast messages={toasts} onRemove={removeToast} />
+
               {isOffline && (
                   <div className="bg-gray-900 text-white text-xs font-bold py-2 px-4 flex items-center justify-center gap-2 animate-fade-in-down absolute top-0 left-0 right-0 z-[10000]">
                       <WifiOff size={14} />
@@ -173,23 +196,19 @@ const App: React.FC = () => {
                   </div>
               )}
 
-              {globalError && (
-                  <div className="fixed top-12 left-0 right-0 z-[9999] p-4 flex justify-center pointer-events-none animate-fade-in-down">
-                      <div className="bg-rose-50 border border-rose-100 shadow-xl rounded-2xl p-4 flex items-start gap-3 max-w-sm w-full pointer-events-auto">
-                          <div className="p-2 bg-rose-100 rounded-full text-rose-600"><AlertTriangle size={20} /></div>
-                          <div className="flex-1">
-                              <h3 className="text-sm font-bold text-gray-900">{globalError.title}</h3>
-                              <p className="text-xs text-gray-600 mt-1">{globalError.message}</p>
-                          </div>
-                          <button onClick={() => setGlobalError(null)} className="text-gray-400 hover:text-gray-600"><X size={18} /></button>
-                      </div>
-                  </div>
-              )}
-
               {currentView === AppView.INTRO && <WelcomeScreen onNavigate={handleNavigateToAuth} />}
-              {currentView === AppView.AUTH && <Auth onLoginSuccess={() => {}} initialMode={authMode} onBack={() => setCurrentView(AppView.INTRO)} />}
+              {currentView === AppView.AUTH && <Auth onLoginSuccess={() => notify('success', 'Prihlásenie úspešné')} initialMode={authMode} onBack={() => setCurrentView(AppView.INTRO)} />}
               {currentView === AppView.DASHBOARD && user && (
-                <Dashboard user={user} onLogout={handleLogout} records={records} onAddRecord={addRecord} onDeleteRecord={deleteRecord} shiftConfig={shiftConfig} onUpdateShiftConfig={setShiftConfig} />
+                <Dashboard 
+                    user={user} 
+                    onLogout={handleLogout} 
+                    records={records} 
+                    onAddRecord={addRecord} 
+                    onDeleteRecord={deleteRecord} 
+                    shiftConfig={shiftConfig} 
+                    onUpdateShiftConfig={(cfg) => { setShiftConfig(cfg); notify('success', 'Nastavenia uložené'); }}
+                    notify={notify}
+                />
               )}
           </div>
           <style>{`
