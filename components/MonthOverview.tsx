@@ -2,7 +2,7 @@
 import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { createPortal } from 'react-dom';
 import { ShiftConfig, AttendanceRecord, ShiftTimes } from '../types';
-import { Zap, ChevronLeft, ChevronRight, Calendar as CalendarIcon, Clock, Briefcase, Settings2, Moon, Sun, Coffee, X, Check, Repeat, CalendarDays, Timer } from 'lucide-react';
+import { Zap, ChevronLeft, ChevronRight, Calendar as CalendarIcon, Clock, Briefcase, Settings2, Moon, Sun, Coffee, X, Check, Repeat, CalendarDays, LucideProps } from 'lucide-react';
 
 interface MonthOverviewProps {
   config: ShiftConfig;
@@ -101,8 +101,6 @@ const MonthOverview: React.FC<MonthOverviewProps> = ({ config, onUpdateConfig, r
 
   return (
     <div className="pt-12 px-6 pb-32 animate-fade-in font-sans">
-      
-      {/* Header Section */}
       <header className="flex justify-between items-start mb-8">
         <div className="flex items-start gap-4">
           <div className="p-3 bg-white rounded-2xl shadow-sm text-blue-500 border border-gray-100">
@@ -121,7 +119,6 @@ const MonthOverview: React.FC<MonthOverviewProps> = ({ config, onUpdateConfig, r
         </button>
       </header>
 
-      {/* Month Selector */}
       <div className="flex items-center justify-between mb-8 px-2">
         <button onClick={() => setCurrentDate(new Date(year, month - 1, 1))} className="p-2 text-slate-300 hover:text-blue-500 transition-colors">
           <ChevronLeft size={28} />
@@ -135,7 +132,6 @@ const MonthOverview: React.FC<MonthOverviewProps> = ({ config, onUpdateConfig, r
         </button>
       </div>
 
-      {/* Calendar Grid */}
       <div className="w-full mb-8">
         <div className="grid grid-cols-7 mb-6 text-center">
           {['PO', 'UT', 'ST', 'ŠT', 'PI', 'SO', 'NE'].map((day, i) => (
@@ -176,7 +172,6 @@ const MonthOverview: React.FC<MonthOverviewProps> = ({ config, onUpdateConfig, r
         </div>
       </div>
 
-      {/* Stats Card: Mesačný Fond */}
       <div className="bg-white rounded-[32px] p-6 shadow-[0_4px_20px_-2px_rgba(0,0,0,0.05)] mb-6 border border-gray-50">
         <div className="flex justify-between items-start mb-2">
           <div className="flex items-center gap-2 text-slate-400">
@@ -198,7 +193,6 @@ const MonthOverview: React.FC<MonthOverviewProps> = ({ config, onUpdateConfig, r
         </div>
       </div>
 
-      {/* Day Detail Card */}
       <div className="bg-white rounded-[32px] p-6 shadow-[0_4px_20px_-2px_rgba(0,0,0,0.05)] border border-gray-50 animate-slide-up">
         <div className="flex justify-between items-center mb-6">
           <div>
@@ -214,7 +208,7 @@ const MonthOverview: React.FC<MonthOverviewProps> = ({ config, onUpdateConfig, r
           <div className="bg-slate-50 rounded-2xl p-4 flex justify-between items-center">
             <span className="text-sm font-semibold text-slate-500">Typ zmeny</span>
             <span className={`text-sm font-bold bg-white px-4 py-1.5 rounded-xl shadow-sm border border-gray-100 ${selectedShift.text} flex items-center gap-2`}>
-              {React.cloneElement(selectedShift.icon as React.ReactElement<any>, { size: 14 })}
+              {React.isValidElement(selectedShift.icon) && React.cloneElement(selectedShift.icon as React.ReactElement<LucideProps>, { size: 14 })}
               <span className="opacity-60">{getShiftCodeForDay(selectedDay)} -</span>
               {selectedShift.label}
             </span>
@@ -234,7 +228,6 @@ const MonthOverview: React.FC<MonthOverviewProps> = ({ config, onUpdateConfig, r
         </div>
       </div>
 
-      {/* Shift Settings Portal */}
       <ShiftSettingsSheet 
         isOpen={isSettingsOpen} 
         onClose={() => setIsSettingsOpen(false)} 
@@ -245,7 +238,6 @@ const MonthOverview: React.FC<MonthOverviewProps> = ({ config, onUpdateConfig, r
   );
 };
 
-// Pomocné komponenty a Portály
 const ScreenshotStepper = ({ label, value, onIncrement, onDecrement, unit }: any) => (
     <div className="flex flex-col items-center justify-center py-2 px-1">
         <div className="text-3xl font-black text-slate-800 mb-1 flex items-baseline">
@@ -266,7 +258,6 @@ const ShiftSettingsSheet = ({ isOpen, onClose, config, onSave }: any) => {
     const [restDays, setRestDays] = useState(2);
     const [shiftLength, setShiftLength] = useState(8);
     
-    // Fix: Use local date formatting instead of toISOString for initial value
     const getTodayString = () => {
         const now = new Date();
         const y = now.getFullYear();
@@ -280,8 +271,6 @@ const ShiftSettingsSheet = ({ isOpen, onClose, config, onSave }: any) => {
     const [shiftTimes, setShiftTimes] = useState<ShiftTimes>({ 'R': { start: '06:00', end: '14:00' }, 'P': { start: '14:00', end: '22:00' }, 'N': { start: '22:00', end: '06:00' } });
     const [shiftPattern, setShiftPattern] = useState<string[]>([]);
     const [selectedSlotIndex, setSelectedSlotIndex] = useState<number>(0);
-
-    // State for local calendar inside portal
     const [viewDate, setViewDate] = useState(new Date(startDate));
 
     useEffect(() => {
@@ -318,7 +307,6 @@ const ShiftSettingsSheet = ({ isOpen, onClose, config, onSave }: any) => {
       onClose(); 
     };
 
-    // Helper for calendar in portal
     const year = viewDate.getFullYear();
     const month = viewDate.getMonth();
     const daysInMonth = new Date(year, month + 1, 0).getDate();
@@ -337,8 +325,6 @@ const ShiftSettingsSheet = ({ isOpen, onClose, config, onSave }: any) => {
         <div className="fixed inset-0 z-[9999] flex items-end justify-center">
             <div className="absolute inset-0 bg-slate-900/60 backdrop-blur-sm animate-fade-in" onClick={onClose} />
             <div className="relative w-full bg-white rounded-t-[40px] shadow-2xl z-10 flex flex-col max-h-[95vh] animate-slide-up overflow-hidden max-w-lg">
-                 
-                 {/* Header */}
                  <div className="flex justify-between items-center px-8 pt-8 pb-3">
                     <h3 className="text-xl font-bold text-slate-900 tracking-tight">Nastavenie Turnusu</h3>
                     <button onClick={onClose} className="w-9 h-9 bg-slate-50 rounded-full text-slate-400 flex items-center justify-center hover:bg-slate-100 transition-colors">
@@ -354,15 +340,12 @@ const ShiftSettingsSheet = ({ isOpen, onClose, config, onSave }: any) => {
                      )}
 
                      <div className={`space-y-5 transition-all duration-300 ${isActive ? 'opacity-100' : 'opacity-40 pointer-events-none grayscale'}`}>
-                        
-                        {/* 1. Steppers Card - Enhanced according to screenshot */}
                         <div className="grid grid-cols-3 divide-x divide-slate-100 bg-[#f8fafc] rounded-[32px] p-4 border border-slate-100 shadow-sm">
                           <ScreenshotStepper label="Dni v práci" value={workDays} onIncrement={() => setWorkDays(d => d + 1)} onDecrement={() => setWorkDays(d => Math.max(1, d - 1))} />
                           <ScreenshotStepper label="Dni voľna" value={restDays} onIncrement={() => setRestDays(d => d + 1)} onDecrement={() => setRestDays(d => Math.max(0, d - 1))} />
                           <ScreenshotStepper label="Dĺžka smeny" value={shiftLength} unit="h" onIncrement={() => setShiftLength((l: number) => parseFloat((Math.min(24, l + 0.25)).toFixed(2)))} onDecrement={() => setShiftLength((l: number) => parseFloat((Math.max(1, l - 0.25)).toFixed(2)))} />
                         </div>
 
-                        {/* 2. Editor Cyklu - Compact slot navigation with added vertical spacing for scaling */}
                         <div>
                              <div className="flex items-center justify-between mb-2 px-2">
                                <label className="text-[10px] font-bold text-slate-400 uppercase tracking-[0.2em]">EDITOR CYKLU</label>
@@ -381,7 +364,7 @@ const ShiftSettingsSheet = ({ isOpen, onClose, config, onSave }: any) => {
                                       `}
                                     >
                                       <div className={`${isActiveSlot ? 'text-blue-500' : 'text-slate-300'} flex items-center justify-center`}>
-                                        {React.cloneElement(SHIFT_STYLES[code].icon as React.ReactElement<any>, { size: 16 })}
+                                        {React.isValidElement(SHIFT_STYLES[code].icon) && React.cloneElement(SHIFT_STYLES[code].icon as React.ReactElement<LucideProps>, { size: 16 })}
                                       </div>
                                       <span className={`absolute -top-1.5 -right-1.5 text-[8px] font-bold px-1 rounded-full ${isActiveSlot ? 'bg-blue-500 text-white' : 'bg-slate-200 text-slate-500'}`}>{code}</span>
                                       {isActiveSlot && (
@@ -393,7 +376,6 @@ const ShiftSettingsSheet = ({ isOpen, onClose, config, onSave }: any) => {
                              </div>
                         </div>
 
-                        {/* 3. Shift Selection Grid - Optimized & Compact with vertical padding for scaling effect */}
                         <div className="grid grid-cols-4 gap-2.5 px-1 py-2">
                           {(['R', 'P', 'N', 'V'] as const).map(type => {
                             const isSelected = shiftPattern[selectedSlotIndex] === type;
@@ -410,7 +392,7 @@ const ShiftSettingsSheet = ({ isOpen, onClose, config, onSave }: any) => {
                                 `}
                               >
                                 <div className={`flex items-center gap-1.5 transition-transform duration-300 ${isSelected ? 'scale-110 text-blue-500' : 'text-slate-300'}`}>
-                                  {React.cloneElement(SHIFT_STYLES[type].icon as React.ReactElement<any>, { size: 14 })}
+                                  {React.isValidElement(SHIFT_STYLES[type].icon) && React.cloneElement(SHIFT_STYLES[type].icon as React.ReactElement<LucideProps>, { size: 14 })}
                                   <span className="text-xs font-black">{type}</span>
                                 </div>
                                 <span className="text-[8px] font-black uppercase tracking-widest text-center leading-none mt-1">{SHIFT_STYLES[type].label}</span>
@@ -419,7 +401,6 @@ const ShiftSettingsSheet = ({ isOpen, onClose, config, onSave }: any) => {
                           })}
                         </div>
 
-                        {/* 4. Start Date Picker - Interactive and Prominent */}
                         <div className="px-1">
                              <label className="text-[10px] font-bold text-slate-400 uppercase tracking-[0.2em] block mb-2 pl-1">ZAČIATOK CYKLU</label>
                              <button 
@@ -435,7 +416,6 @@ const ShiftSettingsSheet = ({ isOpen, onClose, config, onSave }: any) => {
                      </div>
                  </div>
 
-                 {/* Save Button Area - Increased size by 130% and mobile optimized */}
                  <div className="p-6 bg-white border-t border-slate-50 shadow-[0_-15px_40px_-20px_rgba(0,0,0,0.15)]" style={{ paddingBottom: 'calc(2rem + env(safe-area-inset-bottom))' }}>
                      <button 
                         onClick={handleSave} 
@@ -446,7 +426,6 @@ const ShiftSettingsSheet = ({ isOpen, onClose, config, onSave }: any) => {
                  </div>
             </div>
 
-            {/* Date Picker Portal - Now with a full calendar UI */}
             {isDatePickerOpen && createPortal(
               <div className="fixed inset-0 z-[10001] flex items-end justify-center">
                  <div className="absolute inset-0 bg-slate-900/50 backdrop-blur-md animate-fade-in" onClick={() => setIsDatePickerOpen(false)} />
@@ -481,7 +460,6 @@ const ShiftSettingsSheet = ({ isOpen, onClose, config, onSave }: any) => {
                                 <button 
                                     key={day} 
                                     onClick={() => {
-                                        // Fix: Construct the date string using local year, month, and day to avoid timezone shifts
                                         const y = year;
                                         const m = String(month + 1).padStart(2, '0');
                                         const d = String(day).padStart(2, '0');
