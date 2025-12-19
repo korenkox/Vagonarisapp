@@ -13,61 +13,8 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
-
-    <!-- Tailwind Play CDN (Len pre rýchly prototyping, v produkcii riešené cez postcss) -->
-    <script src="https://cdn.tailwindcss.com"></script>
-    <script>
-      tailwind.config = {
-        theme: {
-          extend: {
-            fontFamily: {
-              sans: ['Inter', 'sans-serif'],
-            },
-            animation: {
-              'blob': 'blob 7s infinite',
-              'spin-slow': 'spin 20s linear infinite',
-              'reverse-spin': 'reverse-spin 25s linear infinite',
-              'pulse-slow': 'pulse 4s cubic-bezier(0.4, 0, 0.6, 1) infinite',
-            },
-            keyframes: {
-              blob: {
-                '0%': { transform: 'translate(0px, 0px) scale(1)' },
-                '33%': { transform: 'translate(30px, -50px) scale(1.1)' },
-                '66%': { transform: 'translate(-20px, 20px) scale(0.9)' },
-                '100%': { transform: 'translate(0px, 0px) scale(1)' },
-              },
-              'reverse-spin': {
-                from: { transform: 'rotate(360deg)' },
-                to: { transform: 'rotate(0deg)' },
-              }
-            },
-          },
-        },
-      }
-    </script>
-
-    <style type="text/tailwindcss">
-      @layer base {
-        html, body {
-          @apply antialiased text-gray-900 bg-gray-50 overflow-x-hidden w-full;
-          -webkit-tap-highlight-color: transparent;
-          touch-action: pan-y;
-          position: relative;
-        }
-        #root {
-          @apply w-full overflow-x-hidden;
-        }
-      }
-      @layer utilities {
-        .safe-area-pb {
-          padding-bottom: env(safe-area-inset-bottom);
-        }
-        .safe-area-pt {
-          padding-top: env(safe-area-inset-top);
-        }
-      }
-    </style>
-  <script type="importmap">
+    
+      <script type="importmap">
 {
   "imports": {
     "react": "https://esm.sh/react@^19.2.3",
@@ -82,6 +29,7 @@
   }
 }
 </script>
+<link rel="stylesheet" href="/index.css">
 </head>
   <body class="select-none touch-manipulation">
     <div id="root"></div>

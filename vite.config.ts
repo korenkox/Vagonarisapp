@@ -9,8 +9,6 @@ export default defineConfig({
     VitePWA({
       registerType: 'autoUpdate',
       injectRegister: 'auto',
-      // Explicitne povieme pluginu, ktoré súbory má zahrnúť
-      includeAssets: ['manifest.json', 'favicon.ico', 'apple-touch-icon.png'],
       manifest: {
         "name": "Dochádzka Pro",
         "short_name": "Dochádzka",
@@ -37,19 +35,15 @@ export default defineConfig({
         ]
       },
       workbox: {
-        // Zabezpečíme, aby Workbox našiel aspoň JS a HTML súbory
-        globPatterns: ['**/*.{js,css,html}', '**/*.{png,svg,ico,json}'],
-        cleanupOutdatedCaches: true,
-        clientsClaim: true,
-        skipWaiting: true,
-        // Ignorujeme chybu, ak sa niektoré vzory nenájdu (napr. ak nemáme žiadne ico)
-        maximumFileSizeToCacheInBytes: 3000000
+        // Zjednodušené pre stabilitu buildu
+        globPatterns: ['**/*.{js,css,html,png,svg,json}'],
+        maximumFileSizeToCacheInBytes: 5 * 1024 * 1024
       }
     })
   ],
   build: {
     outDir: 'dist',
-    sourcemap: false,
-    chunkSizeWarningLimit: 1500
+    emptyOutDir: true,
+    sourcemap: false
   }
 });
