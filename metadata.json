@@ -1,5 +1,8 @@
+
 {
-  "name": "Dochádzka Pro",
-  "description": "Profesionálna PWA aplikácia na sledovanie dochádzky zamestnancov optimalizovaná pre mobilné zariadenia.",
-  "requestFramePermissions": []
+  "name": "Vagonaris Dochádzka",
+  "description": "Profesionálna PWA aplikácia pre elitu šichty. Sleduj svoju dochádzku ako skutočný boss.",
+  "requestFramePermissions": [
+    "geolocation"
+  ]
 }
