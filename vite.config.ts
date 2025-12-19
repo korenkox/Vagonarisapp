@@ -21,15 +21,9 @@ export default defineConfig({
         "scope": "/",
         "icons": [
           {
-            "src": "mascot.png",
-            "sizes": "192x192",
-            "type": "image/png",
-            "purpose": "any maskable"
-          },
-          {
-            "src": "mascot.png",
-            "sizes": "512x512",
-            "type": "image/png",
+            "src": "mascot.svg",
+            "sizes": "any",
+            "type": "image/svg+xml",
             "purpose": "any maskable"
           }
         ]

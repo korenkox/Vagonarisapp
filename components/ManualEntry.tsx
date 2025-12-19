@@ -130,7 +130,7 @@ const ManualEntry: React.FC<ManualEntryProps> = ({ onSave, onDelete, user, recor
       <div className="flex justify-between items-center mb-6 pt-4">
          <div className="flex items-center gap-3">
             <div className="w-12 h-12 bg-amber-500 rounded-2xl flex items-center justify-center shadow-lg boss-glow-amber overflow-hidden border border-white/20">
-               <img src="mascot.png" className="w-full h-full object-cover scale-150 translate-y-2" alt="Boss" />
+               <img src="mascot.svg" className="w-full h-full p-2" alt="Boss" />
             </div>
             <div>
                <h1 className="text-xl font-black text-white leading-tight uppercase tracking-tighter">VAGONARIS <span className="text-amber-500">BOSS</span></h1>

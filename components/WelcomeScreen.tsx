@@ -28,7 +28,7 @@ const WelcomeScreen: React.FC<WelcomeScreenProps> = ({ onNavigate }) => {
          <div className={`w-full flex justify-between items-center transition-all duration-1000 ${mounted ? 'opacity-100 translate-y-0' : 'opacity-0 -translate-y-6'}`}>
              <div className="flex items-center gap-4">
                  <div className="w-14 h-14 bg-amber-500 rounded-[20px] flex items-center justify-center text-slate-900 shadow-[0_0_35px_rgba(245,158,11,0.4)] border-2 border-white/20">
-                    <span className="font-black text-3xl tracking-tighter">V</span>
+                    <img src="mascot.svg" className="w-10 h-10" alt="V" />
                  </div>
                  <div className="flex flex-col">
                     <span className="text-[16px] font-black tracking-[0.25em] text-amber-500 uppercase leading-none">Vagonaris</span>
@@ -49,7 +49,7 @@ const WelcomeScreen: React.FC<WelcomeScreenProps> = ({ onNavigate }) => {
                  
                  {/* The Boss Mascot */}
                  <img 
-                    src="mascot.png" 
+                    src="mascot.svg" 
                     alt="Vagonaris Boss" 
                     className="w-full h-full object-contain relative z-20 drop-shadow-[0_25px_50px_rgba(0,0,0,0.5)]"
                  />
