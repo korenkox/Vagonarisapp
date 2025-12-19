@@ -276,6 +276,7 @@ const TeamView: React.FC<TeamViewProps> = ({ user, records, shiftConfig }) => {
           if (findError) throw findError;
           if (!foundGroups || foundGroups.length === 0) { setJoinError('Skupina s týmto kódom neexistuje.'); setLoading(false); return; }
           const groupId = foundGroups[0].id;
+          // Fix: Changing calendar_fund value source from myStats.calendar_fund (non-existent) to myStats.calendarFund
           const { error: joinErr } = await supabase.from('group_members').insert({ group_id: groupId, user_id: currentUserId, role: 'Member', user_name: user.name, initials: user.name?.[0] || '?', worked_hours: myStats.worked, norm_hours: myStats.norm, calendar_fund: myStats.calendarFund || 0 });
           if (joinErr) { if (joinErr.code === '23505') { setJoinError('Už ste členom tejto skupiny.'); } else { throw joinErr; } } else { setJoinCode(''); setView('LIST'); fetchGroups(); }
       } catch (err: any) { console.error(err); setJoinError('Chyba pri pripájaní.'); } finally { setLoading(false); }
@@ -354,7 +355,10 @@ const TeamView: React.FC<TeamViewProps> = ({ user, records, shiftConfig }) => {
                 </div>
             </div>
 
-            <div className="relative z-10"><LiquidChart efficiency={selectedGroup.efficiency} balance={balance} isPositiveBalance={isPositiveBalance} /></div>
+            {/* Grafický prehľad s dodatočnou medzerou dole */}
+            <div className="relative z-10 mb-14">
+                <LiquidChart efficiency={selectedGroup.efficiency} balance={balance} isPositiveBalance={isPositiveBalance} />
+            </div>
             
             <div className="grid grid-cols-3 gap-1.5 xs:gap-2 px-1 mb-8 relative z-20">
                 <div className="bg-white/70 backdrop-blur-md rounded-2xl p-2 sm:p-2.5 border border-white shadow-sm flex flex-col items-center">
