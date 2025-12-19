@@ -1,7 +1,7 @@
 
 import React, { useState, Suspense } from 'react';
 import { User, AttendanceRecord, ShiftConfig, DashboardTab, NotifyFn } from '../types';
-import { Home, Calendar, Users, User as UserIcon, Activity, LogOut, Loader2 } from 'lucide-react';
+import { Home, Calendar, Users, User as UserIcon, LogOut, Loader2, Sparkles, TrendingUp } from 'lucide-react';
 import { useIsMobile } from '../hooks/useIsMobile';
 
 const ManualEntry = React.lazy(() => import('./ManualEntry'));
@@ -22,7 +22,7 @@ interface DashboardProps {
 
 const LoadingSpinner = () => (
     <div className="flex items-center justify-center h-64 w-full animate-fade-in">
-        <Loader2 className="animate-spin text-blue-500" size={32} />
+        <Loader2 className="animate-spin text-amber-500" size={32} />
     </div>
 );
 
@@ -50,53 +50,51 @@ const Dashboard: React.FC<DashboardProps> = ({
     );
   };
 
-  const getGradient = () => {
-    switch(activeTab) {
-        case 'HOME': return 'from-teal-50 via-white to-blue-50';
-        case 'CALENDAR': return 'from-indigo-50 via-white to-purple-50';
-        case 'TEAM': return 'from-slate-100 via-white to-blue-50';
-        case 'PROFILE': return 'from-blue-50 via-white to-teal-50';
-    }
-  };
-
   return (
-    <div className={`min-h-screen relative bg-gradient-to-br ${getGradient()} transition-colors duration-1000 w-full overflow-hidden`}>
+    <div className={`min-h-screen relative bg-[#0f172a] transition-colors duration-1000 w-full overflow-hidden text-white`}>
       
-      {/* Background Blobs - GPU Optimized, fixne pozície pre iPhone mini */}
+      {/* Background Ambience */}
       <div className="fixed inset-0 z-0 overflow-hidden pointer-events-none transform-gpu w-full h-full">
-        <div className={`absolute top-[-5%] left-[-10%] w-64 h-64 bg-blue-300/10 rounded-full blur-[60px] animate-blob transform-gpu`} />
-        <div className={`absolute top-[15%] right-[-10%] w-64 h-64 bg-purple-300/10 rounded-full blur-[60px] animate-blob animation-delay-2000 transform-gpu`} />
-        <div className={`absolute bottom-[-5%] left-[10%] w-64 h-64 bg-teal-300/10 rounded-full blur-[60px] animate-blob animation-delay-4000 transform-gpu`} />
+        <div className={`absolute top-[-5%] left-[-10%] w-64 h-64 bg-amber-500/5 rounded-full blur-[80px] animate-blob transform-gpu`} />
+        <div className={`absolute bottom-[-5%] right-[-10%] w-64 h-64 bg-red-500/5 rounded-full blur-[80px] animate-blob animation-delay-4000 transform-gpu`} />
       </div>
 
       <div className="flex min-h-screen relative z-10 w-full overflow-hidden">
         
         {!isMobile && (
-            <aside className="w-72 sticky top-0 h-screen bg-white/80 backdrop-blur-xl border-r border-white/60 shadow-xl p-6 flex flex-col justify-between z-50">
+            <aside className="w-72 sticky top-0 h-screen bg-slate-900/80 backdrop-blur-2xl border-r border-white/5 shadow-2xl p-6 flex flex-col justify-between z-50">
                 <div>
-                    <div className="flex items-center gap-3 mb-10 px-2">
-                        <div className="w-10 h-10 bg-gray-900 rounded-xl flex items-center justify-center text-white shadow-lg shadow-blue-500/20">
-                             <Activity size={20} />
+                    <div className="flex items-center gap-4 mb-10 px-2 group">
+                        <div className="w-14 h-14 bg-amber-500 rounded-2xl flex items-center justify-center text-slate-900 shadow-xl shadow-amber-500/10 overflow-hidden transition-transform group-hover:scale-105 duration-500 border-2 border-white/10">
+                             <img src="https://api.dicebear.com/7.x/avataaars/svg?seed=VagonarisBoss" className="w-full h-full object-cover scale-125 translate-y-2" alt="Mascot" />
                         </div>
                         <div>
-                            <h1 className="font-bold text-gray-900 leading-none tracking-tight text-base uppercase">Dochádzka</h1>
-                            <span className="text-[10px] font-bold text-gray-400 uppercase tracking-[0.2em]">PRO SYSTEM</span>
+                            <h1 className="font-black text-white leading-none tracking-tight text-lg uppercase">BOSS</h1>
+                            <div className="flex items-center gap-1 mt-1">
+                                <Sparkles size={10} className="text-amber-500" />
+                                <span className="text-[10px] font-black text-amber-500 uppercase tracking-[0.2em]">TRACKER</span>
+                            </div>
                         </div>
                     </div>
                     <nav className="space-y-2">
-                        <SidebarItem active={activeTab === 'HOME'} onClick={() => setActiveTab('HOME')} icon={<Home size={20} />} label="Domov" description="Prehľad a záznam" color="bg-blue-50 text-blue-600" />
-                        <SidebarItem active={activeTab === 'CALENDAR'} onClick={() => setActiveTab('CALENDAR')} icon={<Calendar size={20} />} label="Kalendár" description="Smeny a plány" color="bg-indigo-50 text-indigo-600" />
-                        <SidebarItem active={activeTab === 'TEAM'} onClick={() => setActiveTab('TEAM')} icon={<Users size={20} />} label="Tím" description="Skupiny a štatistiky" color="bg-rose-50 text-rose-600" />
-                        <SidebarItem active={activeTab === 'PROFILE'} onClick={() => setActiveTab('PROFILE')} icon={<UserIcon size={20} />} label="Profil" description="Nastavenia účtu" color="bg-teal-50 text-teal-600" />
+                        <SidebarItem active={activeTab === 'HOME'} onClick={() => setActiveTab('HOME')} icon={<Home size={20} />} label="Prehľad" description="Daily Focus" color="bg-amber-500 text-slate-900" />
+                        <SidebarItem active={activeTab === 'CALENDAR'} onClick={() => setActiveTab('CALENDAR')} icon={<Calendar size={20} />} label="Kalendár" description="Shift Plan" color="bg-white text-slate-900" />
+                        <SidebarItem active={activeTab === 'TEAM'} onClick={() => setActiveTab('TEAM')} icon={<Users size={20} />} label="Môj Tím" description="Alpha Group" color="bg-amber-500 text-slate-900" />
+                        <SidebarItem active={activeTab === 'PROFILE'} onClick={() => setActiveTab('PROFILE')} icon={<UserIcon size={20} />} label="Nastavenia" description="Security" color="bg-white text-slate-900" />
                     </nav>
                 </div>
-                <div className="bg-gray-50/50 rounded-2xl p-4 border border-gray-100">
-                     <div className="flex items-center gap-3 mb-3">
-                         <div className="w-10 h-10 rounded-full bg-white border border-gray-100 flex items-center justify-center text-gray-700 font-bold uppercase">{user.name?.[0]}</div>
-                         <div className="overflow-hidden"><div className="text-sm font-bold text-gray-900 truncate">{user.name}</div><div className="text-xs text-gray-400 truncate">{user.email}</div></div>
+                <div className="bg-white/5 rounded-[32px] p-6 shadow-2xl border border-white/10 relative overflow-hidden group">
+                     <div className="flex items-center gap-4 mb-4 relative z-10">
+                         <div className="w-12 h-12 rounded-2xl bg-slate-800 border border-white/10 flex items-center justify-center overflow-hidden">
+                             <img src="https://api.dicebear.com/7.x/avataaars/svg?seed=VagonarisBoss" className="w-full h-full object-cover scale-150 translate-y-2" alt="Avatar" />
+                         </div>
+                         <div className="overflow-hidden">
+                            <div className="text-sm font-black text-white truncate uppercase">{user.name}</div>
+                            <div className="text-[10px] text-amber-500 font-bold uppercase tracking-widest">Main Boss</div>
+                         </div>
                      </div>
-                     <button onClick={onLogout} className="w-full py-2 flex items-center justify-center gap-2 bg-white border border-gray-200 rounded-xl text-xs font-bold text-gray-600 hover:text-rose-600 transition-colors">
-                         <LogOut size={14} /> Odhlásiť sa
+                     <button onClick={onLogout} className="w-full py-3 flex items-center justify-center gap-2 bg-white text-slate-900 rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-amber-500 transition-all">
+                         <LogOut size={14} /> Odhlásiť
                      </button>
                 </div>
             </aside>
@@ -112,11 +110,11 @@ const Dashboard: React.FC<DashboardProps> = ({
 
       {isMobile && (
         <nav className="fixed bottom-0 left-0 right-0 z-50 safe-area-pb px-4 pb-4 pointer-events-none">
-            <div className="bg-white/80 backdrop-blur-2xl border border-white/50 shadow-2xl rounded-full px-6 py-2.5 flex justify-between items-center pointer-events-auto transform-gpu">
-                <NavButton isActive={activeTab === 'HOME'} onClick={() => setActiveTab('HOME')} icon={<Home size={20} />} label="Domov" activeColor="text-blue-600" />
-                <NavButton isActive={activeTab === 'CALENDAR'} onClick={() => setActiveTab('CALENDAR')} icon={<Calendar size={20} />} label="Kalendár" activeColor="text-indigo-600" />
-                <NavButton isActive={activeTab === 'TEAM'} onClick={() => setActiveTab('TEAM')} icon={<Users size={20} />} label="Tím" activeColor="text-rose-600" />
-                <NavButton isActive={activeTab === 'PROFILE'} onClick={() => setActiveTab('PROFILE')} icon={<UserIcon size={20} />} label="Profil" activeColor="text-teal-600" />
+            <div className="bg-slate-900/90 backdrop-blur-2xl border border-white/10 shadow-2xl rounded-full px-6 py-4 flex justify-between items-center pointer-events-auto transform-gpu mx-2">
+                <NavButton isActive={activeTab === 'HOME'} onClick={() => setActiveTab('HOME')} icon={<Home size={22} />} label="Domov" activeColor="text-amber-500" />
+                <NavButton isActive={activeTab === 'CALENDAR'} onClick={() => setActiveTab('CALENDAR')} icon={<Calendar size={22} />} label="Kalendár" activeColor="text-white" />
+                <NavButton isActive={activeTab === 'TEAM'} onClick={() => setActiveTab('TEAM')} icon={<Users size={22} />} label="Tím" activeColor="text-amber-500" />
+                <NavButton isActive={activeTab === 'PROFILE'} onClick={() => setActiveTab('PROFILE')} icon={<UserIcon size={22} />} label="Profil" activeColor="text-white" />
             </div>
         </nav>
       )}
@@ -125,21 +123,21 @@ const Dashboard: React.FC<DashboardProps> = ({
 };
 
 const SidebarItem = ({ active, onClick, icon, label, description, color }: any) => (
-    <button onClick={onClick} className={`w-full flex items-center gap-4 p-3 rounded-2xl transition-all duration-200 group transform-gpu ${active ? 'bg-white shadow-md scale-[1.02]' : 'hover:bg-white/50'}`}>
-        <div className={`w-10 h-10 rounded-xl flex items-center justify-center transition-colors ${active ? color : 'bg-gray-100 text-gray-400'}`}>
+    <button onClick={onClick} className={`w-full flex items-center gap-4 p-4 rounded-2xl transition-all duration-300 group transform-gpu ${active ? 'bg-white/10 shadow-xl scale-[1.02] border border-white/10' : 'hover:bg-white/5'}`}>
+        <div className={`w-11 h-11 rounded-xl flex items-center justify-center transition-all duration-300 shadow-sm ${active ? color : 'bg-white/5 text-white/30'}`}>
             {icon}
         </div>
         <div className="text-left">
-            <div className={`font-bold text-sm ${active ? 'text-gray-900' : 'text-gray-500'}`}>{label}</div>
-            <div className="text-[10px] font-medium text-gray-400 uppercase tracking-wide">{description}</div>
+            <div className={`font-black text-xs uppercase tracking-widest ${active ? 'text-white' : 'text-white/40'}`}>{label}</div>
+            <div className="text-[9px] font-bold text-white/20 uppercase tracking-[0.1em] mt-1">{description}</div>
         </div>
     </button>
 );
 
 const NavButton = ({ isActive, onClick, icon, label, activeColor }: any) => (
   <button onClick={onClick} className={`flex flex-col items-center justify-center w-12 transition-all duration-300 ${isActive ? 'scale-110 opacity-100' : 'opacity-40'}`}>
-    <div className={`${isActive ? activeColor : 'text-gray-600'} mb-0.5`}>{icon}</div>
-    <span className={`text-[8px] font-black uppercase tracking-widest ${isActive ? activeColor : 'text-gray-500'}`}>{label}</span>
+    <div className={`${isActive ? activeColor : 'text-white'} mb-1`}>{icon}</div>
+    <span className={`text-[8px] font-black uppercase tracking-[0.1em] ${isActive ? activeColor : 'text-white'}`}>{label}</span>
   </button>
 );
 
