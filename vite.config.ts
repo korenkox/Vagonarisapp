@@ -10,24 +10,24 @@ export default defineConfig({
       registerType: 'autoUpdate',
       injectRegister: 'auto',
       manifest: {
-        "name": "Dochádzka Pro",
-        "short_name": "Dochádzka",
-        "description": "Profesionálna PWA aplikácia na sledovanie dochádzky",
-        "theme_color": "#ffffff",
-        "background_color": "#ffffff",
+        "name": "Vagonaris Boss Dochádzka",
+        "short_name": "Boss",
+        "description": "Profesionálna PWA aplikácia pre elitu šichty. Sleduj svoju dochádzku ako skutočný boss.",
+        "theme_color": "#0f172a",
+        "background_color": "#0f172a",
         "display": "standalone",
         "orientation": "portrait",
         "start_url": "/",
         "scope": "/",
         "icons": [
           {
-            "src": "https://cdn.jsdelivr.net/gh/walkxcode/dashboard-icons/png/google-keep.png",
+            "src": "mascot.png",
             "sizes": "192x192",
             "type": "image/png",
             "purpose": "any maskable"
           },
           {
-            "src": "https://cdn.jsdelivr.net/gh/walkxcode/dashboard-icons/png/google-keep.png",
+            "src": "mascot.png",
             "sizes": "512x512",
             "type": "image/png",
             "purpose": "any maskable"
@@ -35,7 +35,6 @@ export default defineConfig({
         ]
       },
       workbox: {
-        // Zjednodušené pre stabilitu buildu
         globPatterns: ['**/*.{js,css,html,png,svg,json}'],
         maximumFileSizeToCacheInBytes: 5 * 1024 * 1024
       }
