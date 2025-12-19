@@ -2,8 +2,8 @@
 {
   "name": "Dochádzka Pro",
   "short_name": "Dochádzka",
-  "description": "Profesionálna PWA aplikácia na sledovanie dochádzky",
-  "theme_color": "#ffffff",
+  "description": "Profesionálna PWA aplikácia na sledovanie dochádzky s maskotom Vagonaris",
+  "theme_color": "#000000",
   "background_color": "#ffffff",
   "display": "standalone",
   "orientation": "portrait",
@@ -11,15 +11,15 @@
   "scope": "/",
   "icons": [
     {
-      "src": "https://cdn.jsdelivr.net/gh/walkxcode/dashboard-icons/png/google-keep.png",
+      "src": "https://api.dicebear.com/7.x/avataaars/svg?seed=VagonarisBoss&backgroundColor=b6e3f4",
       "sizes": "192x192",
-      "type": "image/png",
+      "type": "image/svg+xml",
       "purpose": "any maskable"
     },
     {
-      "src": "https://cdn.jsdelivr.net/gh/walkxcode/dashboard-icons/png/google-keep.png",
+      "src": "https://api.dicebear.com/7.x/avataaars/svg?seed=VagonarisBoss&backgroundColor=b6e3f4",
       "sizes": "512x512",
-      "type": "image/png",
+      "type": "image/svg+xml",
       "purpose": "any maskable"
     }
   ]
