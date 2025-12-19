@@ -10,20 +10,26 @@ export default defineConfig({
       registerType: 'autoUpdate',
       injectRegister: 'auto',
       manifest: {
-        "name": "Vagonaris Boss Dochádzka",
-        "short_name": "Boss",
-        "description": "Profesionálna PWA aplikácia pre elitu šichty. Sleduj svoju dochádzku ako skutočný boss.",
-        "theme_color": "#0f172a",
-        "background_color": "#0f172a",
+        "name": "Dochádzka Pro",
+        "short_name": "Dochádzka",
+        "description": "Profesionálna PWA aplikácia na sledovanie dochádzky",
+        "theme_color": "#ffffff",
+        "background_color": "#ffffff",
         "display": "standalone",
         "orientation": "portrait",
         "start_url": "/",
         "scope": "/",
         "icons": [
           {
-            "src": "mascot.svg",
-            "sizes": "any",
-            "type": "image/svg+xml",
+            "src": "https://img.icons8.com/fluency/192/clock.png",
+            "sizes": "192x192",
+            "type": "image/png",
+            "purpose": "any maskable"
+          },
+          {
+            "src": "https://img.icons8.com/fluency/512/clock.png",
+            "sizes": "512x512",
+            "type": "image/png",
             "purpose": "any maskable"
           }
         ]
