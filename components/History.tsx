@@ -26,7 +26,6 @@ const LiquidChart = ({ efficiency, balance, isPositiveBalance }: { efficiency: n
     useEffect(() => {
         const container = containerRef.current;
         const card = cardRef.current;
-        // 3D tilt is strictly DISABLED on mobile for performance
         if (!container || !card || window.innerWidth < 768) return;
 
         const handleMouseMove = (e: MouseEvent) => {
@@ -35,8 +34,8 @@ const LiquidChart = ({ efficiency, balance, isPositiveBalance }: { efficiency: n
             const y = e.clientY - rect.top;
             const centerX = rect.width / 2;
             const centerY = rect.height / 2;
-            const rotateX = ((y - centerY) / centerY) * -15; 
-            const rotateY = ((x - centerX) / centerX) * 15;
+            const rotateX = ((y - centerY) / centerY) * -10; 
+            const rotateY = ((x - centerX) / centerX) * 10;
             card.style.transform = `translate3d(0,0,0) rotateX(${rotateX}deg) rotateY(${rotateY}deg)`;
         };
 
@@ -56,57 +55,55 @@ const LiquidChart = ({ efficiency, balance, isPositiveBalance }: { efficiency: n
     const activeTickCount = Math.min(60, Math.floor((Math.min(efficiency, 100) / 100) * 60));
 
     return (
-        <div className="relative flex items-center justify-center py-16 sm:py-20 w-full overflow-visible transform-gpu" style={{ perspective: '1200px' }}>
+        <div className="relative flex items-center justify-center py-6 sm:py-16 w-full overflow-visible transform-gpu" style={{ perspective: '1200px' }}>
             <style>{`
                 @keyframes drift { 0% { transform: translate3d(0,0,0) rotate(0deg); } 100% { transform: translate3d(0,0,0) rotate(360deg); } }
-                @keyframes scan { 0% { transform: translate3d(0,0,0) rotate(0deg); border-top-color: var(--lc-primary); } 50% { border-top-color: transparent; } 100% { transform: translate3d(0,0,0) rotate(360deg); border-top-color: var(--lc-primary); } }
                 @keyframes gyro-x { 0% { transform: translate3d(0,0,0) rotateX(0deg) rotateZ(0deg); } 100% { transform: translate3d(0,0,0) rotateX(360deg) rotateZ(360deg); } }
                 @keyframes gyro-y { 0% { transform: translate3d(0,0,0) rotateY(0deg) rotateZ(0deg); } 100% { transform: translate3d(0,0,0) rotateY(360deg) rotateZ(-360deg); } }
                 .lc-vars { --lc-primary: ${theme.primary}; --lc-dark: ${theme.dark}; --lc-glow: ${theme.glow}; --lc-glow-dim: ${theme.glowDim}; }
-                .gyro-ring { position: absolute; inset: -40px; border-radius: 50%; border: 1px solid rgba(0,0,0,0.05); pointer-events: none; will-change: transform; transform-gpu: translate3d(0,0,0); }
-                .gyro-1 { border-top: 2px solid var(--lc-primary); border-bottom: 2px solid var(--lc-primary); animation: gyro-x 12s linear infinite; box-shadow: 0 0 15px var(--lc-glow-dim); }
-                .gyro-2 { inset: -25px; border-left: 2px solid var(--lc-primary); border-right: 2px solid var(--lc-primary); animation: gyro-y 15s linear infinite; opacity: 0.4; }
-                .gyro-3 { inset: -55px; border: 1px dashed rgba(0,0,0,0.1); animation: drift 30s linear infinite; }
-                .tech-tick { position: absolute; top: 0; left: 50%; width: 2px; height: 10px; background: #cbd5e1; transform-origin: 50% calc(140px + 15px); transition: background 0.3s, height 0.3s; transform: translate3d(0,0,0); }
-                .tech-tick.active { background: var(--lc-primary); box-shadow: 0 0 4px var(--lc-primary); height: 14px; }
+                .gyro-ring { position: absolute; border-radius: 50%; border: 1px solid rgba(0,0,0,0.05); pointer-events: none; will-change: transform; transform-gpu: translate3d(0,0,0); }
+                .gyro-1 { inset: -12px; border-top: 2px solid var(--lc-primary); border-bottom: 2px solid var(--lc-primary); animation: gyro-x 12s linear infinite; box-shadow: 0 0 10px var(--lc-glow-dim); }
+                .gyro-2 { inset: -6px; border-left: 2px solid var(--lc-primary); border-right: 2px solid var(--lc-primary); animation: gyro-y 15s linear infinite; opacity: 0.3; }
+                .gyro-3 { inset: -18px; border: 1px dashed rgba(0,0,0,0.05); animation: drift 40s linear infinite; }
+                .tech-tick { position: absolute; top: 0; left: 50%; width: 1.5px; height: 5px; background: #e2e8f0; transform-origin: 50% calc(100px + 6px); transition: background 0.3s; transform: translate3d(0,0,0); }
+                .tech-tick.active { background: var(--lc-primary); box-shadow: 0 0 3px var(--lc-primary); height: 7px; }
                 .wave { position: absolute; left: -50%; width: 200%; height: 200%; background-color: var(--lc-primary); border-radius: 40%; opacity: 0.9; will-change: transform; transform-gpu: translate3d(0,0,0); }
                 .wave-back { bottom: 0; opacity: 0.4; border-radius: 42%; animation: drift 9s linear infinite; background-color: var(--lc-dark); }
                 .wave-front { bottom: 0; animation: drift 7s linear infinite reverse; }
             `}</style>
-            <div ref={containerRef} className="relative lc-vars scale-[0.75] sm:scale-100 transform-gpu" style={{ width: '280px', height: '280px' }}>
-                 <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[500px] h-[500px] rounded-full blur-[40px] opacity-20 pointer-events-none transition-colors duration-700" style={{ backgroundColor: theme.glow }} />
+            <div ref={containerRef} className="relative lc-vars scale-[0.8] xs:scale-90 sm:scale-100 transform-gpu" style={{ width: '200px', height: '200px' }}>
+                 <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[350px] h-[350px] rounded-full blur-[40px] opacity-10 pointer-events-none transition-colors duration-700" style={{ backgroundColor: theme.glow }} />
                  <div ref={cardRef} className="relative w-full h-full flex items-center justify-center transition-transform duration-100 ease-out transform-gpu" style={{ transformStyle: 'preserve-3d' }}>
                      <div className="absolute inset-0 z-0" style={{ transformStyle: 'preserve-3d' }}>
                          <div className="gyro-ring gyro-3"></div><div className="gyro-ring gyro-2"></div><div className="gyro-ring gyro-1"></div>
-                         <div className="absolute inset-[-15px] rounded-full animate-[drift_60s_linear_infinite_reverse] transform-gpu">
+                         <div className="absolute inset-[-5px] rounded-full animate-[drift_60s_linear_infinite_reverse] transform-gpu">
                              {TICKS.map((i) => (
                                  <div key={i} className={`tech-tick ${i < activeTickCount ? 'active' : ''}`} style={{ transform: `rotate(${i * 6}deg) translate3d(0,0,0)` }} />
                              ))}
                          </div>
-                         <div className="absolute inset-[-5px] rounded-full border-t-2 border-transparent border-l-transparent border-r-transparent animate-[scan_4s_linear_infinite] opacity-60 z-20 transform-gpu"></div>
                      </div>
-                     <div className="relative w-full h-full rounded-full shadow-2xl z-10 bg-white border border-slate-100 overflow-hidden ring-4 ring-white transform-gpu">
+                     <div className="relative w-full h-full rounded-full shadow-2xl z-10 bg-white border border-slate-50 overflow-hidden ring-4 ring-white transform-gpu">
                          <div className="absolute top-0 left-0 right-0 bottom-0 rounded-full overflow-hidden transform-gpu">
                              <div className="absolute bottom-0 left-0 width-full w-full transition-all duration-700 ease-out transform-gpu" style={{ height: `${liquidHeight}%` }}>
                                  <div className="wave wave-back"></div><div className="wave wave-front"></div>
                              </div>
                          </div>
                          <div className="absolute inset-0 flex flex-col items-center justify-center z-20 pointer-events-none transform-gpu">
-                             <div className="flex items-start drop-shadow-md transform translate-y-2 relative transform-gpu">
-                                 <span className={`text-[4rem] font-black tracking-tighter leading-none transition-colors duration-500 transform-gpu ${efficiency > 50 ? 'text-white' : 'text-slate-800'}`}>
+                             <div className="flex items-start drop-shadow-sm transform translate-y-1 relative transform-gpu">
+                                 <span className={`text-[3rem] font-black tracking-tighter leading-none transition-colors duration-500 transform-gpu ${efficiency > 50 ? 'text-white' : 'text-slate-800'}`}>
                                      {efficiency}
                                  </span>
-                                 <span className={`text-xl font-black mt-2 ml-1 transition-colors duration-500 transform-gpu ${efficiency > 50 ? 'text-white/90' : 'text-slate-400'}`}>
+                                 <span className={`text-base font-black mt-1 ml-0.5 transition-colors duration-500 transform-gpu ${efficiency > 50 ? 'text-white/90' : 'text-slate-400'}`}>
                                      %
                                  </span>
                              </div>
-                             <div className="text-[10px] font-black tracking-[0.3em] uppercase mt-2 transition-all duration-500 transform-gpu" style={{ color: efficiency > 60 ? 'white' : theme.primary, opacity: efficiency > 60 ? 0.9 : 1 }}>ÚČINNOSŤ</div>
+                             <div className="text-[7px] font-black tracking-[0.2em] uppercase mt-1 transition-all duration-500 transform-gpu" style={{ color: efficiency > 60 ? 'white' : theme.primary, opacity: efficiency > 60 ? 0.9 : 1 }}>ÚČINNOSŤ</div>
                          </div>
                      </div>
-                     <div className="absolute -bottom-14 z-50 w-full flex justify-center transform-gpu" style={{ transform: 'translate3d(0,0,60px)' }}>
-                         <div className="px-6 py-3 rounded-xl shadow-lg flex items-center gap-4 transition-all duration-300 border-l-4 bg-white/90 backdrop-blur-md" style={{ borderColor: theme.primary }}>
-                             <div className="relative"><div className="w-2 h-2 rounded-full animate-ping absolute top-0 right-0" style={{ backgroundColor: theme.primary }}></div><span className="text-xl" role="img" aria-label="icon">{theme.icon}</span></div>
-                             <div className="flex flex-col"><span className="text-slate-800 font-mono font-bold text-lg tracking-wide leading-none">{isPositiveBalance ? '+' : ''}{balance.toFixed(1)}h</span><span className="text-[9px] font-bold text-slate-400 uppercase tracking-widest mt-0.5">{isPositiveBalance ? 'UŠETRENÉ' : 'NADČAS'}</span></div>
+                     <div className="absolute -bottom-8 z-50 w-full flex justify-center transform-gpu" style={{ transform: 'translate3d(0,0,60px)' }}>
+                         <div className="px-4 py-2 rounded-xl shadow-lg flex items-center gap-2 transition-all duration-300 border-l-4 bg-white/95 backdrop-blur-md" style={{ borderColor: theme.primary }}>
+                             <div className="relative"><span className="text-base" role="img" aria-label="icon">{theme.icon}</span></div>
+                             <div className="flex flex-col"><span className="text-slate-800 font-mono font-bold text-sm tracking-wide leading-none">{isPositiveBalance ? '+' : ''}{balance.toFixed(1)}h</span><span className="text-[7px] font-bold text-slate-400 uppercase tracking-widest mt-0.5">{isPositiveBalance ? 'UŠETRENÉ' : 'NADČAS'}</span></div>
                          </div>
                      </div>
                  </div>
@@ -279,7 +276,7 @@ const TeamView: React.FC<TeamViewProps> = ({ user, records, shiftConfig }) => {
           if (findError) throw findError;
           if (!foundGroups || foundGroups.length === 0) { setJoinError('Skupina s týmto kódom neexistuje.'); setLoading(false); return; }
           const groupId = foundGroups[0].id;
-          const { error: joinErr } = await supabase.from('group_members').insert({ group_id: groupId, user_id: currentUserId, role: 'Member', user_name: user.name, initials: user.name?.[0] || '?', worked_hours: myStats.worked, norm_hours: myStats.norm, calendar_fund: myStats.calendarFund });
+          const { error: joinErr } = await supabase.from('group_members').insert({ group_id: groupId, user_id: currentUserId, role: 'Member', user_name: user.name, initials: user.name?.[0] || '?', worked_hours: myStats.worked, norm_hours: myStats.norm, calendar_fund: myStats.calendarFund || 0 });
           if (joinErr) { if (joinErr.code === '23505') { setJoinError('Už ste členom tejto skupiny.'); } else { throw joinErr; } } else { setJoinCode(''); setView('LIST'); fetchGroups(); }
       } catch (err: any) { console.error(err); setJoinError('Chyba pri pripájaní.'); } finally { setLoading(false); }
   };
@@ -295,7 +292,7 @@ const TeamView: React.FC<TeamViewProps> = ({ user, records, shiftConfig }) => {
            const { error } = await supabase.rpc('delete_group_member', { target_user_id: memberId, target_group_id: selectedGroup.id });
            if (error) throw error;
            setMemberToManage(null); fetchGroups();
-      } catch (err: any) { console.error('Error removing member:', err); alert('Chyba pri odstraňovaní člena: ' + (err.message || 'Uistite sa, že ste v Supabase vytvorili SQL funkciu delete_group_member.')); }
+      } catch (err: any) { console.error('Error removing member:', err); alert('Chyba pri odstraňovaní člena: ' + (err.message || 'Chyba v databáze.')); }
   };
 
   const isAdmin = selectedGroup?.adminId === currentUserId;
@@ -309,9 +306,9 @@ const TeamView: React.FC<TeamViewProps> = ({ user, records, shiftConfig }) => {
              </div>
              <div className="bg-white rounded-[32px] p-8 shadow-xl shadow-blue-900/5 transform-gpu">
                  <div className="flex justify-center mb-6"><div className="w-20 h-20 bg-indigo-50 rounded-full flex items-center justify-center"><Users size={32} className="text-indigo-500" /></div></div>
-                 <p className="text-center text-gray-500 mb-8">Zadajte 6-miestny kód, ktorý vám poslal administrátor skupiny.</p>
+                 <p className="text-center text-gray-500 mb-8 text-sm">Zadajte 6-miestny kód, ktorý vám poslal administrátor skupiny.</p>
                  <div className="mb-6"><label className="text-[10px] font-bold text-gray-400 uppercase tracking-widest pl-2 mb-2 block">Pozývací kód</label><input type="text" value={joinCode} onChange={(e) => setJoinCode(e.target.value.toUpperCase())} placeholder="ABC-123" className="w-full text-center text-3xl font-mono font-bold py-4 bg-gray-50 rounded-2xl border-2 border-transparent focus:border-indigo-500 focus:bg-white outline-none transition-all placeholder-gray-300 uppercase" maxLength={7} />{joinError && <p className="text-rose-500 text-xs mt-2 text-center font-bold">{joinError}</p>}</div>
-                 <button onClick={handleJoinGroup} disabled={joinCode.length < 3 || loading} className="w-full py-4 bg-indigo-600 text-white rounded-2xl font-bold shadow-lg shadow-indigo-500/30 hover:bg-indigo-700 active:scale-[0.98] transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2">{loading && <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />}Pripojiť sa</button>
+                 <button onClick={handleJoinGroup} disabled={joinCode.length < 3 || loading} className="w-full py-4 bg-indigo-600 text-white rounded-2xl font-bold shadow-lg shadow-indigo-500/30 hover:bg-indigo-700 active:scale-[0.98] transition-all disabled:opacity-50 flex items-center justify-center gap-2">{loading && <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />}Pripojiť sa</button>
              </div>
         </div>
       );
@@ -326,8 +323,8 @@ const TeamView: React.FC<TeamViewProps> = ({ user, records, shiftConfig }) => {
                 <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-blue-400 to-indigo-600" />
                 <div className="mb-8 flex justify-center"><div className="w-20 h-20 bg-blue-50 rounded-full flex items-center justify-center animate-pulse transform-gpu"><Activity size={40} className="text-blue-500" /></div></div>
                 <label className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-3 block ml-1">Názov tímu</label><div className="relative mb-8 group"><input autoFocus type="text" value={newGroupName} onChange={(e) => setNewGroupName(e.target.value)} placeholder="Napr. Alpha Team..." className="w-full text-2xl font-bold border-b-2 border-gray-200 focus:border-blue-500 outline-none py-3 bg-transparent text-gray-800 placeholder-gray-300 transition-colors" /></div>
-                <div className="bg-blue-50 rounded-xl p-4 mb-8 flex gap-3"><div className="mt-1 text-blue-500"><Zap size={16} /></div><p className="text-xs text-blue-700 leading-relaxed">Po vytvorení skupiny získate <strong>unikátny kód</strong>, ktorý môžete poslať kolegom, aby sa pripojili.</p></div>
-                <button onClick={handleCreateGroup} disabled={!newGroupName.trim() || loading} className={`w-full py-5 text-white rounded-[24px] font-bold shadow-xl flex items-center justify-center gap-3 transition-all duration-300 transform-gpu ${newGroupName.trim() ? 'bg-gradient-to-r from-blue-600 to-indigo-700 hover:scale-[1.02] hover:shadow-blue-500/30' : 'bg-gray-300 cursor-not-allowed'}`}>{loading ? <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" /> : <Power size={20} />}Vytvoriť a Získať Kód</button>
+                <div className="bg-blue-50 rounded-xl p-4 mb-8 flex gap-3"><div className="mt-1 text-blue-500"><Zap size={16} /></div><p className="text-xs text-blue-700 leading-relaxed">Po vytvorení skupiny získate <strong>unikátny kód</strong>, ktorý môžete poslať kolegom.</p></div>
+                <button onClick={handleCreateGroup} disabled={!newGroupName.trim() || loading} className={`w-full py-5 text-white rounded-[24px] font-bold shadow-xl flex items-center justify-center gap-3 transition-all duration-300 transform-gpu ${newGroupName.trim() ? 'bg-gradient-to-r from-blue-600 to-indigo-700 hover:scale-[1.02]' : 'bg-gray-300'}`}>{loading ? <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" /> : <Power size={20} />}Vytvoriť Tím</button>
              </div>
         </div>
     )
@@ -337,19 +334,73 @@ const TeamView: React.FC<TeamViewProps> = ({ user, records, shiftConfig }) => {
       const isHighEnergy = selectedGroup.efficiency >= 100;
       const balance = selectedGroup.totalNorm - selectedGroup.totalWorked;
       const isPositiveBalance = balance >= 0;
-      const theme = { primary: isHighEnergy ? 'text-teal-500' : 'text-indigo-500', bg: isHighEnergy ? 'bg-teal-500' : 'bg-indigo-500', gradient: isHighEnergy ? 'from-teal-400 to-emerald-500' : 'from-indigo-400 to-blue-500', glow: isHighEnergy ? 'bg-teal-400/20' : 'bg-indigo-400/20', fill: isHighEnergy ? 'bg-gradient-to-t from-teal-500/80 to-emerald-400/80' : 'bg-gradient-to-t from-indigo-500/80 to-blue-400/80' };
+      const theme = { primary: isHighEnergy ? 'text-teal-500' : 'text-indigo-500', bg: isHighEnergy ? 'bg-teal-500' : 'bg-indigo-500' };
 
       return (
-        <div className="pt-8 px-6 pb-32 animate-fade-in min-h-screen relative overflow-hidden bg-slate-50 transform-gpu">
-            <div className={`absolute top-[-20%] left-[-20%] w-[600px] h-[600px] rounded-full blur-[80px] opacity-40 transition-colors duration-1000 pointer-events-none transform-gpu ${isHighEnergy ? 'bg-teal-200' : 'bg-indigo-200'}`} />
-            <div className="flex justify-between items-start mb-6 pt-4 relative z-40">
-                <div className="flex items-center gap-4"><button onClick={() => setView('LIST')} className="p-3 bg-white/60 backdrop-blur-md rounded-full hover:bg-white transition-all shadow-sm border border-white/50 group"><ArrowLeft size={24} className="text-gray-600 group-hover:-translate-x-1 transition-transform" /></button><div><h1 className="text-2xl font-bold text-gray-900 leading-none">{selectedGroup.name}</h1><div className="flex items-center gap-2 mt-1"><div className={`w-2 h-2 rounded-full animate-pulse ${theme.bg}`} /><span className={`text-[10px] font-bold uppercase tracking-widest ${theme.primary}`}>System Online</span></div></div></div>
-                <div className="flex gap-2">{isAdmin && (<button onClick={() => setShowInviteModal(true)} className="p-3 bg-white/60 backdrop-blur-md rounded-full hover:bg-white transition-all shadow-sm text-blue-600 border border-white/50"><Share2 size={24} /></button>)}{isAdmin && (<SettingsMenu onDelete={() => handleDeleteGroup(selectedGroup.id)} theme={theme} />)}</div>
+        <div className="pt-8 px-4 sm:px-6 pb-32 animate-fade-in min-h-screen relative overflow-hidden bg-slate-50 transform-gpu">
+            <div className={`absolute top-[-10%] left-[-10%] w-[400px] h-[400px] rounded-full blur-[60px] opacity-20 pointer-events-none transform-gpu ${isHighEnergy ? 'bg-teal-200' : 'bg-indigo-200'}`} />
+            
+            <div className="flex justify-between items-center mb-2 pt-4 relative z-[60] px-2">
+                <div className="flex items-center gap-3">
+                    <button onClick={() => setView('LIST')} className="p-2.5 bg-white/60 backdrop-blur-md rounded-full shadow-sm border border-white/50"><ArrowLeft size={22} className="text-gray-600" /></button>
+                    <div className="min-w-0">
+                        <h1 className="text-lg font-bold text-gray-900 truncate max-w-[140px] leading-tight">{selectedGroup.name}</h1>
+                        <div className="flex items-center gap-1.5"><div className={`w-1.5 h-1.5 rounded-full animate-pulse ${theme.bg}`} /><span className={`text-[9px] font-bold uppercase tracking-widest ${theme.primary}`}>Online</span></div>
+                    </div>
+                </div>
+                <div className="flex gap-2">
+                    {isAdmin && (<button onClick={() => setShowInviteModal(true)} className="p-2.5 bg-white/60 backdrop-blur-md rounded-full shadow-sm text-blue-600 border border-white/50"><Share2 size={22} /></button>)}
+                    {isAdmin && (<SettingsMenu onDelete={() => handleDeleteGroup(selectedGroup.id)} theme={theme} />)}
+                </div>
             </div>
-            <div className="mb-4"><LiquidChart efficiency={selectedGroup.efficiency} balance={balance} isPositiveBalance={isPositiveBalance} /></div>
-            <div className="grid grid-cols-3 gap-3 px-2 mb-8"><div className="bg-white/70 backdrop-blur-md rounded-2xl p-3 border border-white shadow-sm flex flex-col items-center transform-gpu"><span className="text-[9px] font-bold text-gray-400 uppercase tracking-widest mb-1">NH</span><span className="text-lg font-bold text-gray-900">{selectedGroup.totalNorm}h</span><Briefcase size={12} className="text-gray-300 mt-1" /></div><div className="bg-white/70 backdrop-blur-md rounded-2xl p-3 border border-white shadow-sm flex flex-col items-center relative overflow-hidden transform-gpu"><div className="absolute top-0 left-0 w-full h-1 bg-blue-500/50" /><span className="text-[9px] font-bold text-blue-500 uppercase tracking-widest mb-1">Odpracované</span><span className="text-lg font-bold text-blue-600">{selectedGroup.totalWorked}h</span><Clock size={12} className="text-blue-300 mt-1" /></div><div className="bg-gray-100/50 backdrop-blur-md rounded-2xl p-3 border border-transparent flex flex-col items-center opacity-80 transform-gpu"><span className="text-[9px] font-bold text-gray-400 uppercase tracking-widest mb-1">Fond</span><span className="text-lg font-bold text-gray-500">{selectedGroup.totalCalendarFund}h</span><Calendar size={12} className="text-gray-300 mt-1" /></div></div>
-            <div className="flex justify-between items-end px-2 mb-4"><h3 className="text-xs font-bold text-gray-400 uppercase tracking-widest">Členovia tímu ({selectedGroup.members.length})</h3></div>
-            <div className="space-y-3">{selectedGroup.members.map((member, index) => { const eff = member.workedHours > 0 ? Math.round((member.normHours / member.workedHours) * 100) : 0; return (<button key={member.id} onClick={() => setViewMember(member)} className="w-full group relative bg-white rounded-[20px] p-3 pl-4 flex items-center justify-between border border-gray-100 shadow-lg shadow-gray-200/50 hover:shadow-xl hover:scale-[1.01] transition-all duration-300 animate-slide-up transform-gpu" style={{ animationDelay: `${index * 100}ms` }}><div className="flex items-center gap-3 relative z-10 flex-1 min-w-0"><div className="relative flex-shrink-0"><div className={`w-10 h-10 rounded-xl flex items-center justify-center font-bold text-white text-sm shadow-md ${member.role === 'Admin' ? 'bg-gradient-to-br from-amber-400 to-orange-500' : 'bg-gradient-to-br from-slate-400 to-slate-600'}`}>{member.initials}</div><div className={`absolute -bottom-1 -right-1 w-3 h-3 border-2 border-white rounded-full flex items-center justify-center shadow-sm ${member.status === 'online' ? 'bg-emerald-500' : 'bg-gray-300'}`} /></div><div className="min-w-0 text-left"><div className="flex items-center gap-1.5"><div className="font-bold text-gray-900 text-sm truncate">{member.name}</div>{member.role === 'Admin' && <Crown size={10} className="text-amber-500 fill-amber-500 flex-shrink-0" />}</div><div className="text-[9px] font-bold text-gray-400 uppercase tracking-wide flex items-center gap-1">{member.role} <span className="w-0.5 h-0.5 rounded-full bg-gray-300" />{eff}% Eff.</div></div></div><div className="flex items-center gap-1 relative z-10 pl-2">{isAdmin && member.id !== currentUserId && (<div onClick={(e) => { e.stopPropagation(); setMemberToManage(member); }} className="w-8 h-8 flex items-center justify-center rounded-full bg-transparent hover:bg-gray-100 text-gray-300 hover:text-gray-700 transition-colors"><MoreVertical size={16} /></div>)}<div className="text-gray-300 group-hover:text-blue-500 transition-colors"><ChevronRight size={20} /></div></div></button>); })}</div>
+
+            <div className="relative z-10"><LiquidChart efficiency={selectedGroup.efficiency} balance={balance} isPositiveBalance={isPositiveBalance} /></div>
+            
+            <div className="grid grid-cols-3 gap-1.5 xs:gap-2 px-1 mb-8 relative z-20">
+                <div className="bg-white/70 backdrop-blur-md rounded-2xl p-2 sm:p-2.5 border border-white shadow-sm flex flex-col items-center">
+                    <span className="text-[7px] xs:text-[8px] font-bold text-gray-400 uppercase tracking-widest mb-1">Norma</span>
+                    <span className="text-sm xs:text-base font-bold text-gray-900 leading-none">{selectedGroup.totalNorm}h</span>
+                </div>
+                <div className="bg-white/80 backdrop-blur-md rounded-2xl p-2 sm:p-2.5 border border-blue-100 shadow-md flex flex-col items-center relative overflow-hidden">
+                    <div className="absolute top-0 left-0 w-full h-1 bg-blue-500" />
+                    <span className="text-[7px] xs:text-[8px] font-bold text-blue-500 uppercase tracking-widest mb-1">Práca</span>
+                    <span className="text-sm xs:text-base font-bold text-blue-600 leading-none">{selectedGroup.totalWorked}h</span>
+                </div>
+                <div className="bg-gray-100/40 rounded-2xl p-2 sm:p-2.5 flex flex-col items-center opacity-80">
+                    <span className="text-[7px] xs:text-[8px] font-bold text-gray-400 uppercase tracking-widest mb-1">Fond</span>
+                    <span className="text-sm xs:text-base font-bold text-gray-500 leading-none">{selectedGroup.totalCalendarFund}h</span>
+                </div>
+            </div>
+
+            <div className="flex justify-between items-end px-2 mb-4 relative z-20">
+                <h3 className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Členovia ({selectedGroup.members.length})</h3>
+            </div>
+
+            <div className="space-y-2.5 relative z-20">
+                {selectedGroup.members.map((member, index) => { 
+                    const eff = member.workedHours > 0 ? Math.round((member.normHours / member.workedHours) * 100) : 0; 
+                    return (
+                        <button key={member.id} onClick={() => setViewMember(member)} className="w-full group relative bg-white rounded-2xl p-3 flex items-center justify-between border border-gray-50 shadow-sm hover:scale-[1.01] transition-all animate-slide-up transform-gpu" style={{ animationDelay: `${index * 50}ms` }}>
+                            <div className="flex items-center gap-3 flex-1 min-w-0">
+                                <div className="relative flex-shrink-0">
+                                    <div className={`w-10 h-10 rounded-xl flex items-center justify-center font-bold text-white text-sm shadow-md ${member.role === 'Admin' ? 'bg-gradient-to-br from-amber-400 to-orange-500' : 'bg-gradient-to-br from-slate-400 to-slate-600'}`}>{member.initials}</div>
+                                    <div className={`absolute -bottom-0.5 -right-0.5 w-2.5 h-2.5 border-2 border-white rounded-full ${member.status === 'online' ? 'bg-emerald-500' : 'bg-gray-300'}`} />
+                                </div>
+                                <div className="min-w-0 text-left">
+                                    <div className="flex items-center gap-1.5"><div className="font-bold text-gray-900 text-sm truncate max-w-[100px]">{member.name}</div>{member.role === 'Admin' && <Crown size={10} className="text-amber-500 fill-amber-500 flex-shrink-0" />}</div>
+                                    <div className="text-[9px] font-bold text-gray-400 uppercase tracking-tight flex items-center gap-1">{member.role} <span className="w-0.5 h-0.5 rounded-full bg-gray-300" /> {eff}%</div>
+                                </div>
+                            </div>
+                            <div className="flex items-center gap-1 pl-2">
+                                {isAdmin && member.id !== currentUserId && (
+                                    <div onClick={(e) => { e.stopPropagation(); setMemberToManage(member); }} className="p-2 text-gray-300"><MoreVertical size={16} /></div>
+                                )}
+                                <ChevronRight size={18} className="text-gray-200" />
+                            </div>
+                        </button>
+                    ); 
+                })}
+            </div>
             {showInviteModal && (<InviteModal code={selectedGroup.inviteCode} onClose={() => setShowInviteModal(false)} />)}
             <MemberActionSheet isOpen={!!memberToManage} member={memberToManage} onClose={() => setMemberToManage(null)} onRemove={() => memberToManage && handleRemoveMember(memberToManage.id)} />
             <MemberDetailModal isOpen={!!viewMember} member={viewMember} onClose={() => setViewMember(null)} />
@@ -360,7 +411,7 @@ const TeamView: React.FC<TeamViewProps> = ({ user, records, shiftConfig }) => {
   return (
     <div className="pt-8 px-6 pb-32 animate-fade-in min-h-screen bg-slate-50 transform-gpu">
       <div className="flex justify-between items-center mb-8 pt-4"><div><h1 className="text-3xl font-light text-gray-800">Pracovné <span className="font-bold">Skupiny</span></h1><p className="text-gray-400 text-xs font-bold uppercase tracking-wider mt-1">Kooperatívny režim</p></div><div className="flex gap-2"><button onClick={() => setView('JOIN')} className="w-12 h-12 rounded-2xl bg-white text-indigo-600 border border-indigo-100 flex items-center justify-center shadow-lg shadow-indigo-100 hover:scale-110 active:scale-95 transition-all"><LogIn size={24} /></button><button onClick={() => setView('CREATE')} className="w-12 h-12 rounded-2xl bg-gray-900 text-white flex items-center justify-center shadow-xl shadow-gray-900/30 hover:scale-110 active:scale-95 transition-all"><Plus size={24} /></button></div></div>
-      {loading && groups.length === 0 ? (<div className="flex justify-center pt-20"><div className="w-8 h-8 border-4 border-blue-200 border-t-blue-500 rounded-full animate-spin"></div></div>) : groups.length === 0 ? (<div className="flex flex-col items-center justify-center py-20 opacity-80 animate-fade-in transform-gpu"><div className="w-32 h-32 bg-white rounded-full flex items-center justify-center mb-6 shadow-2xl shadow-blue-900/10 border border-white relative transform-gpu"><div className="absolute inset-0 rounded-full animate-ping opacity-20 bg-blue-400 transform-gpu" /><Users size={40} className="text-blue-500" /></div><h3 className="text-xl font-bold text-gray-800 mb-2">Žiadna aktívna skupina</h3><p className="text-gray-400 text-center max-w-xs mb-8">Vytvorte novú pracovnú skupinu alebo sa pripojte k existujúcej pomocou kódu.</p><div className="flex flex-col gap-3 w-full max-w-xs"><button onClick={() => setView('CREATE')} className="px-8 py-3 bg-blue-600 text-white rounded-full font-bold shadow-lg hover:shadow-blue-500/40 hover:scale-105 transition-all transform-gpu">Inicializovať Tím</button><button onClick={() => setView('JOIN')} className="px-8 py-3 bg-white text-blue-600 border border-blue-100 rounded-full font-bold shadow-sm hover:bg-blue-50 transition-all transform-gpu">Mám pozývací kód</button></div></div>) : (<div className="grid gap-6 transform-gpu">{groups.map((group, i) => { const isHighEnergy = group.efficiency >= 100; return (<button key={group.id} onClick={() => { setSelectedGroup(group); setView('DETAIL'); }} className="bg-white rounded-[32px] p-6 shadow-xl shadow-blue-900/5 hover:shadow-2xl hover:scale-[1.02] transition-all text-left relative overflow-hidden group animate-slide-up border border-white/50 transform-gpu" style={{ animationDelay: `${i * 100}ms` }}><div className={`absolute top-0 right-0 w-32 h-32 rounded-full -mr-10 -mt-10 transition-colors duration-500 opacity-20 transform-gpu ${isHighEnergy ? 'bg-teal-400' : 'bg-blue-400'}`} /><div className="relative z-10 flex justify-between items-start mb-6"><div><div className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1 flex items-center gap-1"><Activity size={10} /> {group.inviteCode}</div><h3 className="text-xl font-bold text-gray-900">{group.name}</h3></div><div className={`w-10 h-10 rounded-full flex items-center justify-center border-2 ${isHighEnergy ? 'border-teal-100 bg-teal-50 text-teal-500' : 'border-blue-100 bg-blue-50 text-blue-500'}`}><Zap size={18} fill="currentColor" /></div></div><div className="relative z-10 transform-gpu"><div className="flex justify-between items-end mb-2"><span className="text-3xl font-light text-gray-800">{group.efficiency}%</span><span className="text-xs font-bold text-gray-400 mb-1">Účinnosť</span></div><div className="h-1.5 w-full bg-gray-100 rounded-full overflow-hidden transform-gpu"><div className={`h-full rounded-full transform-gpu ${isHighEnergy ? 'bg-teal-500' : 'bg-blue-500'}`} style={{ width: `${Math.min(100, group.efficiency)}%` }} /></div></div></button>)})}</div>)}
+      {loading && groups.length === 0 ? (<div className="flex justify-center pt-20"><div className="w-8 h-8 border-4 border-blue-200 border-t-blue-500 rounded-full animate-spin"></div></div>) : groups.length === 0 ? (<div className="flex flex-col items-center justify-center py-20 opacity-80 animate-fade-in transform-gpu"><div className="w-32 h-32 bg-white rounded-full flex items-center justify-center mb-6 shadow-2xl shadow-blue-900/10 border border-white relative transform-gpu"><div className="absolute inset-0 rounded-full animate-ping opacity-20 bg-blue-400 transform-gpu" /><Users size={40} className="text-blue-500" /></div><h3 className="text-xl font-bold text-gray-800 mb-2">Žiadna aktívna skupina</h3><p className="text-gray-400 text-center max-w-xs mb-8 text-sm px-4">Vytvorte novú pracovnú skupinu alebo sa pripojte k existujúcej pomocou kódu.</p><div className="flex flex-col gap-3 w-full max-w-xs px-6"><button onClick={() => setView('CREATE')} className="px-8 py-3 bg-blue-600 text-white rounded-full font-bold shadow-lg transform-gpu">Vytvoriť Tím</button><button onClick={() => setView('JOIN')} className="px-8 py-3 bg-white text-blue-600 border border-blue-100 rounded-full font-bold shadow-sm transform-gpu">Pripojiť sa kódom</button></div></div>) : (<div className="grid gap-6 transform-gpu">{groups.map((group, i) => { const isHighEnergy = group.efficiency >= 100; return (<button key={group.id} onClick={() => { setSelectedGroup(group); setView('DETAIL'); }} className="bg-white rounded-[32px] p-6 shadow-xl shadow-blue-900/5 hover:shadow-2xl hover:scale-[1.02] transition-all text-left relative overflow-hidden group animate-slide-up border border-white/50 transform-gpu" style={{ animationDelay: `${i * 100}ms` }}><div className={`absolute top-0 right-0 w-32 h-32 rounded-full -mr-10 -mt-10 opacity-10 transform-gpu ${isHighEnergy ? 'bg-teal-400' : 'bg-blue-400'}`} /><div className="relative z-10 flex justify-between items-start mb-6"><div><div className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1 flex items-center gap-1"><Activity size={10} /> {group.inviteCode}</div><h3 className="text-xl font-bold text-gray-900">{group.name}</h3></div><div className={`w-10 h-10 rounded-full flex items-center justify-center border-2 ${isHighEnergy ? 'border-teal-100 bg-teal-50 text-teal-500' : 'border-blue-100 bg-blue-50 text-blue-500'}`}><Zap size={18} fill="currentColor" /></div></div><div className="relative z-10 transform-gpu"><div className="flex justify-between items-end mb-2"><span className="text-3xl font-light text-gray-800">{group.efficiency}%</span><span className="text-[10px] font-bold text-gray-400 mb-1 uppercase tracking-widest">Účinnosť</span></div><div className="h-1.5 w-full bg-gray-100 rounded-full overflow-hidden transform-gpu"><div className={`h-full rounded-full transform-gpu ${isHighEnergy ? 'bg-teal-500' : 'bg-blue-500'}`} style={{ width: `${Math.min(100, group.efficiency)}%` }} /></div></div></button>)})}</div>)}
     </div>
   );
 };
@@ -374,14 +425,14 @@ const InviteModal = ({ code, onClose }: { code: string, onClose: () => void }) =
              <div className="bg-white w-full max-w-sm rounded-[32px] p-6 z-10 shadow-2xl transform transition-transform animate-scale-in mx-auto relative overflow-hidden transform-gpu">
                  <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-blue-400 to-indigo-600" />
                  <div className="flex justify-between items-start mb-6">
-                    <div><h3 className="text-xl font-bold text-gray-900">Pozvať člena</h3><p className="text-gray-400 text-xs mt-1 font-bold uppercase tracking-wider">Pošlite tento kód kolegovi</p></div>
-                    <button onClick={onClose} className="p-2 bg-gray-50 rounded-full hover:bg-gray-100 transition-colors"><X size={20} className="text-gray-500" /></button>
+                    <div><h3 className="text-xl font-bold text-gray-900">Pozvať člena</h3><p className="text-gray-400 text-[10px] mt-1 font-bold uppercase tracking-widest">Zdieľajte tento unikátny kód</p></div>
+                    <button onClick={onClose} className="p-2 bg-gray-50 rounded-full"><X size={20} className="text-gray-500" /></button>
                  </div>
                  <div className="bg-gray-50 rounded-2xl p-6 text-center mb-6 relative group cursor-pointer border border-dashed border-gray-300 hover:border-blue-400 transition-colors transform-gpu" onClick={handleCopy}>
                      <div className="text-4xl font-mono font-bold text-gray-800 tracking-widest">{code}</div>
                      {copied && (<div className="absolute inset-0 bg-white/90 flex items-center justify-center rounded-2xl animate-fade-in backdrop-blur-sm"><div className="flex items-center gap-2 text-green-600 font-bold"><CheckCircle size={20} /> Skopírované!</div></div>)}
                  </div>
-                 <button onClick={handleCopy} className="w-full py-4 bg-gray-900 text-white rounded-2xl font-bold shadow-lg shadow-gray-900/20 active:scale-[0.98] transition-all flex items-center justify-center gap-2 transform-gpu"><Copy size={20} /> Kopírovať kód</button>
+                 <button onClick={handleCopy} className="w-full py-4 bg-gray-900 text-white rounded-2xl font-bold shadow-lg active:scale-[0.98] transition-all flex items-center justify-center gap-2 transform-gpu"><Copy size={20} /> Kopírovať kód</button>
              </div>
         </div>, document.body
     );
@@ -396,14 +447,14 @@ const MemberActionSheet = ({ isOpen, member, onClose, onRemove }: { isOpen: bool
                  <div className="flex justify-center mb-6"><div className="w-12 h-1.5 bg-gray-200 rounded-full" /></div>
                  <div className="flex items-center gap-4 mb-8 transform-gpu">
                      <div className={`w-16 h-16 rounded-2xl flex items-center justify-center font-bold text-white text-2xl shadow-lg transform-gpu ${member.role === 'Admin' ? 'bg-gradient-to-br from-amber-400 to-orange-500' : 'bg-gradient-to-br from-slate-400 to-slate-600'}`}>{member.initials}</div>
-                     <div><h3 className="text-lg font-bold text-gray-900">{member.name}</h3><div className="text-sm text-gray-500 font-medium">Správa člena tímu</div></div>
+                     <div><h3 className="text-lg font-bold text-gray-900">{member.name}</h3><div className="text-xs text-gray-500 font-bold uppercase tracking-widest mt-0.5">Správa člena</div></div>
                  </div>
                  <div className="space-y-3 transform-gpu">
-                    <button onClick={onRemove} className="w-full p-4 flex items-center gap-4 rounded-2xl bg-rose-50 text-rose-600 hover:bg-rose-100 transition-colors group border border-rose-100 transform-gpu">
-                        <div className="w-10 h-10 rounded-full bg-white flex items-center justify-center shadow-sm text-rose-500 group-hover:scale-110 transition-transform transform-gpu"><UserMinus size={20} /></div>
-                        <div className="text-left"><span className="block font-bold">Odstrániť zo skupiny</span><span className="text-xs opacity-70">Táto akcia je nevratná</span></div>
+                    <button onClick={onRemove} className="w-full p-4 flex items-center gap-4 rounded-2xl bg-rose-50 text-rose-600 border border-rose-100 transform-gpu">
+                        <div className="w-10 h-10 rounded-full bg-white flex items-center justify-center shadow-sm text-rose-500"><UserMinus size={20} /></div>
+                        <div className="text-left"><span className="block font-bold">Odstrániť zo skupiny</span><span className="text-[10px] opacity-70">Táto akcia je nevratná</span></div>
                     </button>
-                    <button onClick={onClose} className="w-full py-4 text-gray-500 font-bold hover:text-gray-900 transition-colors bg-gray-50 rounded-2xl transform-gpu">Zrušiť</button>
+                    <button onClick={onClose} className="w-full py-4 text-gray-500 font-bold bg-gray-50 rounded-2xl">Zrušiť</button>
                  </div>
              </div>
         </div>, document.body
@@ -422,19 +473,19 @@ const MemberDetailModal = ({ isOpen, member, onClose }: { isOpen: boolean, membe
              <div className="absolute inset-0 bg-gray-900/40 backdrop-blur-sm transition-opacity animate-fade-in" onClick={onClose} />
              <div className="bg-white w-full max-w-sm rounded-t-[32px] sm:rounded-[32px] p-6 pb-8 z-10 shadow-2xl transform transition-transform animate-slide-up mx-auto mb-0 sm:mb-auto overflow-hidden relative transform-gpu">
                  <div className="absolute top-[-20%] right-[-20%] w-[200px] h-[200px] bg-blue-100 rounded-full blur-[40px] pointer-events-none opacity-50 transform-gpu" />
-                 <div className="flex justify-between items-center mb-6 relative z-10 transform-gpu"><div className="flex items-center gap-3"><div className={`w-12 h-12 rounded-2xl flex items-center justify-center font-bold text-white text-lg shadow-md transform-gpu ${member.role === 'Admin' ? 'bg-gradient-to-br from-amber-400 to-orange-500' : 'bg-gradient-to-br from-slate-400 to-slate-600'}`}>{member.initials}</div><div><h3 className="text-xl font-bold text-gray-900">{member.name}</h3><div className="text-xs text-gray-400 font-bold uppercase tracking-wider">{member.role}</div></div></div><button onClick={onClose} className="p-2 bg-gray-50 rounded-full hover:bg-gray-100 transition-colors"><X size={20} className="text-gray-500" /></button></div>
-                 <div className="bg-white rounded-[32px] p-6 shadow-xl shadow-blue-900/5 relative overflow-hidden border border-gray-100 transform-gpu">
-                    <div className="flex items-center gap-2 mb-6"><Activity size={18} className="text-blue-500" /><span className="text-xs font-black text-gray-400 uppercase tracking-widest">Mesačný Výkon</span></div>
+                 <div className="flex justify-between items-center mb-6 relative z-10 transform-gpu"><div className="flex items-center gap-3"><div className={`w-12 h-12 rounded-2xl flex items-center justify-center font-bold text-white text-lg shadow-md transform-gpu ${member.role === 'Admin' ? 'bg-gradient-to-br from-amber-400 to-orange-500' : 'bg-gradient-to-br from-slate-400 to-slate-600'}`}>{member.initials}</div><div><h3 className="text-xl font-bold text-gray-900">{member.name}</h3><div className="text-[10px] text-gray-400 font-bold uppercase tracking-widest">{member.role}</div></div></div><button onClick={onClose} className="p-2 bg-gray-50 rounded-full"><X size={20} className="text-gray-500" /></button></div>
+                 <div className="bg-white rounded-[32px] p-6 shadow-xl shadow-blue-900/5 relative overflow-hidden border border-gray-50 transform-gpu">
+                    <div className="flex items-center gap-2 mb-6"><Activity size={16} className="text-blue-500" /><span className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Výkon Zamestnanca</span></div>
                     <div className="flex items-center justify-between gap-4 mb-8 transform-gpu">
                          <div className="relative w-28 h-28 flex items-center justify-center flex-shrink-0 transform-gpu">
-                            <svg className="w-full h-full transform -rotate-90 transform-gpu" viewBox="0 0 128 128"><circle cx="64" cy="64" r={radius} stroke="#f3f4f6" strokeWidth="12" fill="transparent" /><circle cx="64" cy="64" r={radius} stroke="url(#modalGradient)" strokeWidth="12" fill="transparent" strokeLinecap="round" strokeDasharray={circumference} strokeDashoffset={strokeDashoffset} className="transition-all duration-1000 ease-out transform-gpu" /><defs><linearGradient id="modalGradient" x1="0%" y1="0%" x2="100%" y2="0%"><stop offset="0%" stopColor="#3b82f6" /><stop offset="100%" stopColor="#8b5cf6" /></linearGradient></defs></svg>
-                            <div className="absolute inset-0 flex flex-col items-center justify-center transform-gpu"><span className="text-2xl font-black text-gray-900 tracking-tight">{efficiency}%</span><span className="text-[8px] font-bold text-gray-400 uppercase tracking-wide">Účinnosť</span></div>
+                            <svg className="w-full h-full transform -rotate-90 transform-gpu" viewBox="0 0 128 128"><circle cx="64" cy="64" r={radius} stroke="#f3f4f6" strokeWidth="10" fill="transparent" /><circle cx="64" cy="64" r={radius} stroke="url(#modalGradient)" strokeWidth="10" fill="transparent" strokeLinecap="round" strokeDasharray={circumference} strokeDashoffset={strokeDashoffset} className="transition-all duration-1000 ease-out transform-gpu" /><defs><linearGradient id="modalGradient" x1="0%" y1="0%" x2="100%" y2="0%"><stop offset="0%" stopColor="#3b82f6" /><stop offset="100%" stopColor="#8b5cf6" /></linearGradient></defs></svg>
+                            <div className="absolute inset-0 flex flex-col items-center justify-center transform-gpu"><span className="text-2xl font-black text-gray-900 tracking-tight">{efficiency}%</span><span className="text-[8px] font-bold text-gray-400 uppercase tracking-widest">Eff.</span></div>
                          </div>
-                         <div className="flex-1 space-y-3 min-w-0 transform-gpu"><div className="bg-white border border-gray-50 rounded-2xl p-3 shadow-sm transform-gpu"><div className="text-[9px] font-bold text-gray-400 uppercase tracking-widest mb-1">Odpracované</div><div className="text-2xl font-black text-gray-900 leading-none">{member.workedHours.toFixed(1)} <span className="text-sm text-gray-400 font-bold ml-0.5">h</span></div></div><div className="bg-white border border-gray-100 rounded-2xl p-3 shadow-sm transform-gpu"><div className="text-[9px] font-bold text-gray-400 uppercase tracking-widest mb-1">Bilancia</div><div className={`text-xl font-black leading-none ${balance < 0 ? 'text-rose-500' : 'text-teal-500'}`}>{balance > 0 ? '+' : ''}{balance.toFixed(1)}h</div></div></div>
+                         <div className="flex-1 space-y-3 min-w-0 transform-gpu"><div className="bg-white border border-gray-50 rounded-2xl p-3 shadow-sm transform-gpu"><div className="text-[9px] font-bold text-gray-400 uppercase tracking-widest mb-1">Odpracované</div><div className="text-2xl font-black text-gray-900 leading-none">{member.workedHours.toFixed(1)} <span className="text-xs text-gray-400 font-bold ml-0.5">h</span></div></div><div className="bg-white border border-gray-50 rounded-2xl p-3 shadow-sm transform-gpu"><div className="text-[9px] font-bold text-gray-400 uppercase tracking-widest mb-1">Bilancia</div><div className={`text-xl font-black leading-none ${balance < 0 ? 'text-rose-500' : 'text-teal-500'}`}>{balance > 0 ? '+' : ''}{balance.toFixed(1)}h</div></div></div>
                     </div>
-                    <div className="grid grid-cols-2 gap-3 transform-gpu"><div className="bg-white border border-gray-100 rounded-2xl py-3 flex flex-col items-center justify-center transform-gpu"><span className="text-[9px] font-bold text-gray-400 uppercase mb-1">NH</span><span className="text-lg font-black text-gray-800">{member.normHours}h</span></div><div className="bg-white border border-gray-100 rounded-2xl py-3 flex flex-col items-center justify-center transform-gpu"><span className="text-[9px] font-bold text-gray-400 uppercase mb-1">FOND</span><span className="text-lg font-black text-gray-800">{member.calendarFund || 0}h</span></div></div>
+                    <div className="grid grid-cols-2 gap-3 transform-gpu"><div className="bg-gray-50/50 rounded-2xl py-3 flex flex-col items-center justify-center transform-gpu"><span className="text-[9px] font-bold text-gray-400 uppercase mb-1">NH</span><span className="text-lg font-black text-gray-800">{member.normHours}h</span></div><div className="bg-gray-50/50 rounded-2xl py-3 flex flex-col items-center justify-center transform-gpu"><span className="text-[9px] font-bold text-gray-400 uppercase mb-1">FOND</span><span className="text-lg font-black text-gray-800">{member.calendarFund || 0}h</span></div></div>
                  </div>
-                 <button onClick={onClose} className="w-full mt-6 py-4 bg-gray-900 text-white rounded-2xl font-bold shadow-lg shadow-gray-900/20 active:scale-[0.98] transition-all transform-gpu">Zavrieť</button>
+                 <button onClick={onClose} className="w-full mt-6 py-4 bg-gray-900 text-white rounded-2xl font-bold shadow-lg active:scale-[0.98] transition-all transform-gpu">Zavrieť</button>
              </div>
         </div>, document.body
     );
@@ -445,9 +496,9 @@ const SettingsMenu = ({ onDelete, theme }: { onDelete: () => void, theme: any })
     const [deleteConfirm, setDeleteConfirm] = useState(0);
     const handleDeleteClick = () => { if (deleteConfirm === 0) { setDeleteConfirm(1); setTimeout(() => setDeleteConfirm(0), 3000); } else { onDelete(); } };
     return (
-        <div className="relative z-50 transform-gpu">
-            <button onClick={() => setIsOpen(!isOpen)} className={`p-3 rounded-full hover:bg-white transition-all shadow-sm border border-transparent hover:border-white/50 transform-gpu ${isOpen ? 'bg-white text-gray-800 rotate-90' : 'bg-white/60 backdrop-blur-md text-gray-600'}`}><Settings size={24} /></button>
-            {isOpen && (<div className="absolute top-12 right-0 w-64 bg-white rounded-[24px] shadow-2xl shadow-blue-900/20 border border-gray-100 p-4 animate-scale-in origin-top-right transform-gpu"><div className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-3 pl-2">System Controls</div><div className="space-y-2 transform-gpu"><div className="flex items-center justify-between p-3 bg-gray-50 rounded-xl"><span className="text-sm font-bold text-gray-600">Access Level</span><span className="text-[10px] font-bold text-blue-500 bg-blue-50 px-2 py-1 rounded border border-blue-100">ADMIN</span></div><div className="pt-2 mt-2 border-t border-gray-100"><button onClick={handleDeleteClick} className={`w-full p-3 rounded-xl flex items-center justify-between transition-all duration-200 border transform-gpu ${deleteConfirm === 1 ? 'bg-rose-50 border-rose-200 text-rose-600 animate-pulse' : 'bg-white border-transparent hover:bg-rose-50 hover:text-rose-500 text-gray-500'}`}><span className="font-bold text-sm">{deleteConfirm === 1 ? 'Klikni znova pre potvrdenie' : 'Odstrániť skupinu'}</span>{deleteConfirm === 1 ? <Unlock size={18} /> : <Lock size={18} />}</button></div></div></div>)}
+        <div className="relative z-[100] transform-gpu">
+            <button onClick={() => setIsOpen(!isOpen)} className={`p-2.5 rounded-full shadow-sm border border-transparent transition-all transform-gpu ${isOpen ? 'bg-white text-gray-800 rotate-90 shadow-md' : 'bg-white/60 backdrop-blur-md text-gray-600'}`}><Settings size={22} /></button>
+            {isOpen && (<div className="absolute top-12 right-0 w-60 bg-white rounded-[24px] shadow-2xl border border-gray-50 p-4 animate-scale-in origin-top-right transform-gpu z-[110]"><div className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-3 pl-2">Nastavenia Tímu</div><div className="space-y-2 transform-gpu"><div className="flex items-center justify-between p-3 bg-gray-50 rounded-xl"><span className="text-xs font-bold text-gray-600">Rola</span><span className="text-[9px] font-bold text-blue-500 bg-blue-50 px-2 py-1 rounded">ADMIN</span></div><div className="pt-2 mt-2 border-t border-gray-100"><button onClick={handleDeleteClick} className={`w-full p-3 rounded-xl flex items-center justify-between transition-all duration-200 border transform-gpu ${deleteConfirm === 1 ? 'bg-rose-50 border-rose-200 text-rose-600' : 'bg-white border-transparent text-gray-500'}`}><span className="font-bold text-xs">{deleteConfirm === 1 ? 'Klikni znova' : 'Zmazať tím'}</span>{deleteConfirm === 1 ? <Unlock size={16} /> : <Lock size={16} />}</button></div></div></div>)}
         </div>
     );
 };
