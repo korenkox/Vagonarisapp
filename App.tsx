@@ -6,7 +6,8 @@ import Dashboard from './components/Dashboard';
 import WelcomeScreen from './components/WelcomeScreen';
 import Toast, { ToastMessage } from './components/Toast';
 import { supabase } from './supabaseClient';
-import { WifiOff } from 'lucide-react';
+// Pridaný import Terminal pre indikátor vývojárskeho režimu
+import { WifiOff, Terminal } from 'lucide-react';
 
 const App: React.FC = () => {
   const [currentView, setCurrentView] = useState<AppView>(AppView.INTRO);
@@ -66,6 +67,7 @@ const App: React.FC = () => {
           const { data, error } = await supabase.from('attendance_records').select('*').eq('user_id', userId).order('date', { ascending: false });
           if (error) throw error;
           if (data) {
+              // Opravené mapovanie polí z databázy (snake_case) na TypeScript model (camelCase)
               setRecords(data.map(r => ({
                   id: r.id,
                   date: r.date,
@@ -122,13 +124,21 @@ const App: React.FC = () => {
     return () => subscription.unsubscribe();
   }, [fetchRecords, fetchSettings]);
 
-  const handleNavigateToAuth = (mode: 'login' | 'register') => {
+  const handleNavigate = (mode: 'login' | 'register' | 'dev') => {
+      if (mode === 'dev') {
+          setUser({ email: 'dev@tracker.pro', name: 'Vývojár' });
+          setCurrentView(AppView.DASHBOARD);
+          notify('info', 'Prihlásený ako vývojár (Offline režim)');
+          return;
+      }
       setAuthMode(mode);
       setCurrentView(AppView.AUTH);
   };
 
   const handleLogout = async () => { 
       await supabase.auth.signOut(); 
+      setUser(null);
+      setCurrentView(AppView.INTRO);
       notify('success', 'Odhlásenie úspešné');
   };
 
@@ -171,7 +181,7 @@ const App: React.FC = () => {
   useEffect(() => {
     localStorage.setItem('shift_config', JSON.stringify(shiftConfig));
     const saveToCloud = setTimeout(async () => {
-        if (!user || !isConfigLoadedFromDb.current) return;
+        if (!user || !isConfigLoadedFromDb.current || user.email === 'dev@tracker.pro') return;
         try {
             await supabase.from('user_settings').upsert({
                     user_id: (await supabase.auth.getUser()).data.user?.id,
@@ -185,18 +195,18 @@ const App: React.FC = () => {
 
   return (
     <div className="min-h-screen bg-white sm:bg-gray-50 flex justify-center">
-        <div className="w-full max-w-md bg-white min-h-screen shadow-2xl relative">
+        <div className={`w-full ${currentView === AppView.DASHBOARD ? 'sm:max-w-5xl' : 'sm:max-w-md'} bg-white min-h-screen shadow-2xl relative transition-all duration-500`}>
               
               <Toast messages={toasts} onRemove={removeToast} />
 
-              {isOffline && (
-                  <div className="bg-gray-900 text-white text-xs font-bold py-2 px-4 flex items-center justify-center gap-2 animate-fade-in-down absolute top-0 left-0 right-0 z-[10000]">
-                      <WifiOff size={14} />
-                      <span>Ste offline. Zmeny sa uložia lokálne.</span>
+              {(isOffline || (user && user.email === 'dev@tracker.pro')) && (
+                  <div className={`text-white text-[10px] font-bold py-1.5 px-4 flex items-center justify-center gap-2 animate-fade-in-down absolute top-0 left-0 right-0 z-[10000] ${user && user.email === 'dev@tracker.pro' ? 'bg-amber-600 shadow-md' : 'bg-gray-900'}`}>
+                      {user && user.email === 'dev@tracker.pro' ? <Terminal size={12} /> : <WifiOff size={12} />}
+                      <span>{user && user.email === 'dev@tracker.pro' ? 'VÝVOJÁRSKY REŽIM (OFFLINE SYNC)' : 'Ste offline. Zmeny sa uložia lokálne.'}</span>
                   </div>
               )}
 
-              {currentView === AppView.INTRO && <WelcomeScreen onNavigate={handleNavigateToAuth} />}
+              {currentView === AppView.INTRO && <WelcomeScreen onNavigate={handleNavigate} />}
               {currentView === AppView.AUTH && <Auth onLoginSuccess={() => notify('success', 'Prihlásenie úspešné')} initialMode={authMode} onBack={() => setCurrentView(AppView.INTRO)} />}
               {currentView === AppView.DASHBOARD && user && (
                 <Dashboard 

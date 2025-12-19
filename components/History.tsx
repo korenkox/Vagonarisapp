@@ -118,10 +118,16 @@ const LiquidChart = ({ efficiency, balance, isPositiveBalance }: { efficiency: n
                              </div>
                          </div>
                          <div className="absolute inset-0 flex flex-col items-center justify-center z-20 pointer-events-none">
-                             <div className="flex items-start drop-shadow-sm transform translate-y-2 mix-blend-multiply">
-                                 <span className="text-[4rem] font-bold tracking-tighter text-slate-800 leading-none">{efficiency}</span><span className="text-xl font-medium text-slate-400 mt-2 ml-1">%</span>
+                             {/* Fix: Odstránený mix-blend-multiply a pridaný dynamický kontrast pre text a symbol % */}
+                             <div className="flex items-start drop-shadow-md transform translate-y-2 relative">
+                                 <span className={`text-[4rem] font-black tracking-tighter leading-none transition-colors duration-500 ${efficiency > 50 ? 'text-white' : 'text-slate-800'}`}>
+                                     {efficiency}
+                                 </span>
+                                 <span className={`text-xl font-black mt-2 ml-1 transition-colors duration-500 ${efficiency > 50 ? 'text-white/90' : 'text-slate-400'}`}>
+                                     %
+                                 </span>
                              </div>
-                             <div className="text-[10px] font-bold tracking-[0.3em] uppercase mt-2 transition-colors duration-300" style={{ color: theme.primary }}>ÚČINNOSŤ</div>
+                             <div className="text-[10px] font-black tracking-[0.3em] uppercase mt-2 transition-all duration-500" style={{ color: efficiency > 60 ? 'white' : theme.primary, opacity: efficiency > 60 ? 0.9 : 1 }}>ÚČINNOSŤ</div>
                          </div>
                          <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_0%,rgba(255,255,255,0.8),transparent_70%)] pointer-events-none z-30"></div>
                      </div>
@@ -302,6 +308,7 @@ const TeamView: React.FC<TeamViewProps> = ({ user, records, shiftConfig }) => {
           if (findError) throw findError;
           if (!foundGroups || foundGroups.length === 0) { setJoinError('Skupina s týmto kódom neexistuje.'); setLoading(false); return; }
           const groupId = foundGroups[0].id;
+          /* Fix: Updated m.calendar_fund to myStats.calendarFund as 'm' is not defined in this scope. */
           const { error: joinErr } = await supabase.from('group_members').insert({ group_id: groupId, user_id: currentUserId, role: 'Member', user_name: user.name, initials: user.name?.[0] || '?', worked_hours: myStats.worked, norm_hours: myStats.norm, calendar_fund: myStats.calendarFund });
           if (joinErr) { if (joinErr.code === '23505') { setJoinError('Už ste členom tejto skupiny.'); } else { throw joinErr; } } else { setJoinCode(''); setView('LIST'); fetchGroups(); }
       } catch (err: any) { console.error(err); setJoinError('Chyba pri pripájaní.'); } finally { setLoading(false); }

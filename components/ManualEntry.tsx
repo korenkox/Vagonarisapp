@@ -2,7 +2,7 @@
 import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { createPortal } from 'react-dom';
 import { AttendanceRecord, ShiftConfig } from '../types';
-import { Clock, ChevronRight, ChevronLeft, Sun, Moon, Briefcase, Coffee, Sparkles, X, Check, Share2, TrendingUp, TrendingDown, CalendarDays, AlertTriangle, Rocket, Train, Trash2, Calendar } from 'lucide-react';
+import { Clock, ChevronRight, ChevronLeft, Sun, Moon, Briefcase, Coffee, Sparkles, X, Check, Share2, TrendingUp, TrendingDown, CalendarDays, AlertTriangle, Rocket, Train, Trash2, Calendar, Zap } from 'lucide-react';
 
 interface ManualEntryProps {
   onSave: (record: AttendanceRecord) => void;
@@ -41,6 +41,13 @@ const useCounter = (end: number, duration: number = 1000) => {
   return count;
 };
 
+const SHIFT_ICONS: Record<string, React.ReactNode> = {
+  'R': <Sun size={14} />,
+  'P': <Zap size={14} />,
+  'N': <Moon size={14} />,
+  'V': <Coffee size={14} />
+};
+
 const ManualEntry: React.FC<ManualEntryProps> = ({ onSave, onDelete, user, records = [], shiftConfig }) => {
   const [date, setDate] = useState(new Date());
   const [isDatePickerOpen, setIsDatePickerOpen] = useState(false);
@@ -73,6 +80,22 @@ const ManualEntry: React.FC<ManualEntryProps> = ({ onSave, onDelete, user, recor
   });
 
   const visibleRecords = isExpanded ? currentMonthRecords : currentMonthRecords.slice(0, 2);
+
+  // Helper to get shift code for a specific date
+  const getShiftForDate = (dateStr: string) => {
+    if (!shiftConfig.isActive || !shiftConfig.cycle || shiftConfig.cycle.length === 0) return 'V';
+    const [y, m, d] = dateStr.split('-').map(Number);
+    const checkDate = new Date(y, m - 1, d);
+    const startDate = new Date(shiftConfig.startDate);
+    checkDate.setHours(0,0,0,0);
+    startDate.setHours(0,0,0,0);
+    const diffTime = checkDate.getTime() - startDate.getTime();
+    const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24));
+    const cycleLength = shiftConfig.cycle.length;
+    let position = diffDays % cycleLength;
+    if (position < 0) position += cycleLength;
+    return shiftConfig.cycle[position];
+  };
 
   // --- Monthly Stats Calculation ---
   const monthlyStats = useMemo(() => {
@@ -426,13 +449,24 @@ const ManualEntry: React.FC<ManualEntryProps> = ({ onSave, onDelete, user, recor
       </div>
 
       <div className="space-y-2">
-        {visibleRecords.length > 0 ? visibleRecords.map(record => (
+        {visibleRecords.length > 0 ? visibleRecords.map(record => {
+           const shiftCode = getShiftForDate(record.date);
+           return (
            <button key={record.id} onClick={() => setSelectedRecord(record)} className="w-full bg-white rounded-[20px] p-3 flex items-center gap-3 shadow-lg shadow-blue-900/5 border border-white hover:scale-[1.02] active:scale-95 transition-all text-left">
               <div className={`w-1 h-10 rounded-full ${record.isPositiveBalance !== false ? 'bg-teal-400' : 'bg-rose-400'}`} />
-              <div className="flex-1"><div className="font-bold text-gray-900 text-sm">{formatRecordDate(record.date)}</div><div className="text-[10px] text-gray-400 uppercase tracking-wider">{record.totalWorked} odpracované</div></div>
+              <div className="flex-1">
+                <div className="font-bold text-gray-900 text-sm">{formatRecordDate(record.date)}</div>
+                <div className="flex items-center gap-1.5 mt-0.5">
+                  <span className="text-[10px] text-gray-400 uppercase tracking-wider">{record.totalWorked} odpracované</span>
+                  <div className="flex items-center gap-1 px-1.5 py-0.5 bg-gray-50 rounded-md border border-gray-100">
+                    <span className="text-gray-400">{SHIFT_ICONS[shiftCode]}</span>
+                    <span className="text-[9px] font-bold text-gray-500">{shiftCode}</span>
+                  </div>
+                </div>
+              </div>
               {record.balance && <div className={`font-bold text-xs px-2.5 py-1 rounded-full ${record.isPositiveBalance !== false ? 'text-teal-600 bg-teal-50' : 'text-rose-600 bg-rose-50'}`}>{record.balance}</div>}
            </button>
-        )) : <div className="bg-white rounded-[20px] p-4 flex items-center justify-center text-gray-400 text-sm shadow-sm">Žiadne záznamy pre tento mesiac</div>}
+        )}) : <div className="bg-white rounded-[20px] p-4 flex items-center justify-center text-gray-400 text-sm shadow-sm">Žiadne záznamy pre tento mesiac</div>}
       </div>
       
       <div className="h-6" />

@@ -82,16 +82,16 @@ const Dashboard: React.FC<DashboardProps> = ({
 
       <div className="flex min-h-screen relative z-10">
         
-        {/* --- DESKTOP SIDEBAR (Visible only if NOT mobile) --- */}
+        {/* --- DESKTOP SIDEBAR (Centered by App.tsx container) --- */}
         {!isMobile && (
-            <aside className="w-72 fixed left-0 top-0 bottom-0 bg-white/80 backdrop-blur-xl border-r border-white/60 shadow-xl shadow-blue-900/5 p-6 flex flex-col justify-between z-50">
+            <aside className="w-72 sticky top-0 h-screen bg-white/80 backdrop-blur-xl border-r border-white/60 shadow-xl shadow-blue-900/5 p-6 flex flex-col justify-between z-50">
                 <div>
                     <div className="flex items-center gap-3 mb-10 px-2">
                         <div className="w-10 h-10 bg-gray-900 rounded-xl flex items-center justify-center text-white shadow-lg shadow-blue-500/20">
                              <Activity size={20} />
                         </div>
                         <div>
-                            <h1 className="font-bold text-gray-900 leading-none tracking-tight">DOCHÁDZKA</h1>
+                            <h1 className="font-bold text-gray-900 leading-none tracking-tight text-base">DOCHÁDZKA</h1>
                             <span className="text-[10px] font-bold text-gray-400 uppercase tracking-[0.2em]">PRO SYSTEM</span>
                         </div>
                     </div>
@@ -150,8 +150,8 @@ const Dashboard: React.FC<DashboardProps> = ({
         )}
 
         {/* --- MAIN CONTENT --- */}
-        <main className={`flex-1 flex flex-col transition-all duration-300 ${!isMobile ? 'ml-72' : 'pb-24'}`}>
-            <div className={`w-full ${!isMobile ? 'max-w-5xl mx-auto p-8' : ''}`}>
+        <main className={`flex-1 flex flex-col transition-all duration-300 ${isMobile ? 'pb-24' : ''}`}>
+            <div className={`w-full ${!isMobile ? 'p-8' : ''}`}>
                  {renderContent()}
             </div>
         </main>
