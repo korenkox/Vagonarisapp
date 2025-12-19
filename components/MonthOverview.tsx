@@ -214,7 +214,7 @@ const MonthOverview: React.FC<MonthOverviewProps> = ({ config, onUpdateConfig, r
           <div className="bg-slate-50 rounded-2xl p-4 flex justify-between items-center">
             <span className="text-sm font-semibold text-slate-500">Typ zmeny</span>
             <span className={`text-sm font-bold bg-white px-4 py-1.5 rounded-xl shadow-sm border border-gray-100 ${selectedShift.text} flex items-center gap-2`}>
-              {React.cloneElement(selectedShift.icon as React.ReactElement, { size: 14 })}
+              {React.cloneElement(selectedShift.icon as React.ReactElement<any>, { size: 14 })}
               <span className="opacity-60">{getShiftCodeForDay(selectedDay)} -</span>
               {selectedShift.label}
             </span>
@@ -359,7 +359,7 @@ const ShiftSettingsSheet = ({ isOpen, onClose, config, onSave }: any) => {
                         <div className="grid grid-cols-3 divide-x divide-slate-100 bg-[#f8fafc] rounded-[32px] p-4 border border-slate-100 shadow-sm">
                           <ScreenshotStepper label="Dni v práci" value={workDays} onIncrement={() => setWorkDays(d => d + 1)} onDecrement={() => setWorkDays(d => Math.max(1, d - 1))} />
                           <ScreenshotStepper label="Dni voľna" value={restDays} onIncrement={() => setRestDays(d => d + 1)} onDecrement={() => setRestDays(d => Math.max(0, d - 1))} />
-                          <ScreenshotStepper label="Dĺžka smeny" value={shiftLength} unit="h" onIncrement={() => setShiftLength(l => parseFloat((Math.min(24, l + 0.25)).toFixed(2)))} onDecrement={() => setShiftLength(l => parseFloat((Math.max(1, l - 0.25)).toFixed(2)))} />
+                          <ScreenshotStepper label="Dĺžka smeny" value={shiftLength} unit="h" onIncrement={() => setShiftLength((l: number) => parseFloat((Math.min(24, l + 0.25)).toFixed(2)))} onDecrement={() => setShiftLength((l: number) => parseFloat((Math.max(1, l - 0.25)).toFixed(2)))} />
                         </div>
 
                         {/* 2. Editor Cyklu - Compact slot navigation with added vertical spacing for scaling */}
@@ -381,7 +381,7 @@ const ShiftSettingsSheet = ({ isOpen, onClose, config, onSave }: any) => {
                                       `}
                                     >
                                       <div className={`${isActiveSlot ? 'text-blue-500' : 'text-slate-300'} flex items-center justify-center`}>
-                                        {React.cloneElement(SHIFT_STYLES[code].icon as React.ReactElement, { size: 16 })}
+                                        {React.cloneElement(SHIFT_STYLES[code].icon as React.ReactElement<any>, { size: 16 })}
                                       </div>
                                       <span className={`absolute -top-1.5 -right-1.5 text-[8px] font-bold px-1 rounded-full ${isActiveSlot ? 'bg-blue-500 text-white' : 'bg-slate-200 text-slate-500'}`}>{code}</span>
                                       {isActiveSlot && (
@@ -410,7 +410,7 @@ const ShiftSettingsSheet = ({ isOpen, onClose, config, onSave }: any) => {
                                 `}
                               >
                                 <div className={`flex items-center gap-1.5 transition-transform duration-300 ${isSelected ? 'scale-110 text-blue-500' : 'text-slate-300'}`}>
-                                  {React.cloneElement(SHIFT_STYLES[type].icon as React.ReactElement, { size: 14 })}
+                                  {React.cloneElement(SHIFT_STYLES[type].icon as React.ReactElement<any>, { size: 14 })}
                                   <span className="text-xs font-black">{type}</span>
                                 </div>
                                 <span className="text-[8px] font-black uppercase tracking-widest text-center leading-none mt-1">{SHIFT_STYLES[type].label}</span>
